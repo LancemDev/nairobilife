@@ -1,26 +1,41 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f6efe3;
+  --foreground: #1b1612;
+  --card: #fffaf2;
+  --line: #e2d6c3;
+  --muted: #7a6c5d;
+  --kenya-green: #0b7a3b;
+  --kenya-red: #c8102e;
+  --sun: #f2b705;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-card: var(--card);
+  --color-line: var(--line);
+  --color-muted: var(--muted);
+  --color-kgreen: var(--kenya-green);
+  --color-kred: var(--kenya-red);
+  --color-sun: var(--sun);
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Matatu-art stripe used on headers and the title screen */
+.stripe {
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--kenya-red) 0 10px,
+    var(--foreground) 10px 20px,
+    var(--kenya-green) 20px 30px,
+    var(--sun) 30px 40px
+  );
 }
