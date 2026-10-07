@@ -3,17 +3,19 @@
 	"main": ".open-next/worker.js",
 	"name": "nairobilife",
 	"compatibility_date": "2026-10-01",
-	"compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+	"compatibility_flags": [
+		"nodejs_compat",
+		"global_fetch_strictly_public"
+	],
 	"assets": {
 		"directory": ".open-next/assets",
 		"binding": "ASSETS"
 	},
 	"d1_databases": [
 		{
-			// Create the real one with `wrangler d1 create nairobilife` and paste its id here.
 			"binding": "DB",
 			"database_name": "nairobilife",
-			"database_id": "00000000-0000-0000-0000-000000000000",
+			"database_id": "b2ecfc67-60e5-46c5-bf46-c51c24fcb810",
 			"migrations_dir": "migrations"
 		}
 	],
