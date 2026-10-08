@@ -2,8 +2,8 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AREA, GOALS, WISH } from "@/game/data";
-import { activeMoodlets, canChoose, clock, dayOf, hourOf, isBlackout, isRushHour, isWaterCut, mood, placeOf, sickness, weekdayOf } from "@/game/engine";
+import { AREA, GOALS, NPC, WISH } from "@/game/data";
+import { activeMoodlets, canChoose, clock, dayOf, groceryChannels, hourOf, isBlackout, isRushHour, isWaterCut, mood, npcsHere, placeOf, sickness, weekdayOf } from "@/game/engine";
 import { splitIcon } from "@/game/icons";
 import { useGame } from "@/game/store";
 import type { GameState, LogEntry, NeedKey } from "@/game/types";
@@ -11,25 +11,24 @@ import { api, type Profile } from "@/online/api";
 import { useOnline } from "@/online/store";
 import { useSync } from "@/online/useSync";
 import type { Prop } from "@/world/layout";
-import CityMap from "./CityMap";
-import Here, { SocialSheet } from "./Here";
-import HomePanel from "./HomePanel";
+import { Avatar } from "./Avatar";
+import BuyTray from "./BuyTray";
+import GroceryShop from "./GroceryShop";
+import { SocialSheet } from "./Here";
 import { Icon } from "./Icon";
-import Me from "./Me";
-import { ChatSheet, PlayerSheet } from "./Online";
-import People from "./People";
-import Phone from "./Phone";
+import MapScreen from "./MapScreen";
+import { PlayerSheet } from "./Online";
+import PhoneOverlay from "./Phone";
 import { duration, ksh } from "./ui";
+import { useUi, type Overlay } from "./uiStore";
 
 const World = dynamic(() => import("@/world/World"), { ssr: false, loading: () => <div className="absolute inset-0 grid place-items-center text-muted">Loading Kanairo…</div> });
 
-type Panel = "home" | "map" | "phone" | "people" | "me" | "here";
-const DOCK: { id: Panel; label: string; icon: string }[] = [
-  { id: "home", label: "Buy", icon: "sofa" },
+const DOCK: { id: Exclude<Overlay, null> | "home"; label: string; icon: string }[] = [
+  { id: "home", label: "Home", icon: "home" },
+  { id: "buy", label: "Buy", icon: "sofa" },
   { id: "map", label: "Map", icon: "map" },
   { id: "phone", label: "Phone", icon: "device-mobile" },
-  { id: "people", label: "People", icon: "users" },
-  { id: "me", label: "Me", icon: "user" },
 ];
 
 const NEEDS: { key: NeedKey; icon: string; label: string }[] = [
@@ -49,16 +48,18 @@ export default function Play() {
   const send = useGame((s) => s.send);
   const me = useOnline((s) => s.me);
   const unread = useOnline((s) => s.unread);
+  const { overlay, open, openApp } = useUi();
   useSync();
 
-  const [panel, setPanel] = useState<Panel | null>(null);
   const [prop, setProp] = useState<Prop | null>(null);
   const [busy, setBusy] = useState<{ label: string; icon: string; minutes: number } | null>(null);
   const [npc, setNpc] = useState<string | null>(null);
   const [clean, setClean] = useState(false);
+  const [hereOpen, setHereOpen] = useState(false);
   const [others, setOthers] = useState<Profile[]>([]);
   const view = useOnline((s) => s.view);
   const place = placeOf(game);
+  const atHome = game.location === "home";
 
   // Real players in this area, for the 3D room.
   useEffect(() => {
@@ -85,14 +86,24 @@ export default function Play() {
     }, 1100);
   };
 
+  const dock = (id: (typeof DOCK)[number]["id"]) => {
+    setProp(null);
+    if (id === "home") open(null);
+    else if (id === "phone") openApp(null);
+    else open(overlay === id ? null : id);
+  };
+  const active = overlay ?? "home";
+
   return (
     <main className="fixed inset-0 overflow-hidden bg-[#bfe0f7] text-foreground">
-      <World s={game} busy={!!busy} others={others} selected={prop?.id ?? null} onSelect={setProp} onNpc={setNpc} onPlayer={view} />
+      {/* The room unmounts under the full-screen map so only one 3D scene runs at a time. */}
+      {overlay !== "map" && <World s={game} busy={!!busy} others={others} selected={prop?.id ?? null} onSelect={setProp} onNpc={setNpc} onPlayer={view} />}
+      {overlay === "map" && <MapScreen s={game} />}
 
       {!clean && (
         <>
           <TopBar s={game} />
-          <LeftStack s={game} onClean={() => setClean(true)} onOpen={() => setPanel("me")} />
+          {overlay !== "map" && <LeftStack s={game} onClean={() => setClean(true)} onOpen={() => openApp("profile")} />}
         </>
       )}
       {clean && (
@@ -103,47 +114,106 @@ export default function Play() {
       <Toasts log={game.log} />
       <Arrival s={game} />
 
-      {prop && !busy && <ActionMenu prop={prop} onAct={act} onClose={() => setProp(null)} />}
+      {!overlay && prop && !busy && <ActionMenu prop={prop} onAct={act} onClose={() => setProp(null)} />}
       {busy && <Busy busy={busy} />}
+      {!overlay && hereOpen && <HereCard s={game} others={others} onClose={() => setHereOpen(false)} onNpc={setNpc} />}
+      {overlay === "buy" && <BuyTray s={game} />}
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col items-center gap-2 px-3 pb-[max(12px,env(safe-area-inset-bottom))]">
-        <div className="pointer-events-auto flex items-center gap-1 rounded-full bg-white/95 py-1 pl-3 pr-1 text-sm font-semibold shadow-lg">
-          <Icon emoji={place.emoji} size={18} className="text-kgreen" />
-          <button onClick={() => setPanel("here")} className="flex max-w-[52vw] items-center gap-1 truncate px-1">
-            <span className="truncate">{place.name}</span>
-            <Icon name="chevron-up" size={16} />
-          </button>
-          <button onClick={() => setPanel("map")} aria-label="Map" className="grid h-9 w-9 place-items-center rounded-full hover:bg-black/5">
-            <Icon name="map" size={18} />
-          </button>
-        </div>
-        <nav className="pointer-events-auto flex gap-1 rounded-2xl bg-white/95 p-1.5 shadow-xl" aria-label="Game">
-          {DOCK.map((d) => (
-            <button key={d.id} onClick={() => setPanel(panel === d.id ? null : d.id)} className={`relative flex w-16 flex-col items-center gap-0.5 rounded-xl py-1.5 text-[11px] font-semibold transition sm:w-20 ${panel === d.id ? "bg-foreground text-background" : "text-muted hover:text-foreground"}`}>
-              <Icon name={d.icon} size={22} />
-              {d.label}
-              {d.id === "phone" && unread > 0 && <span className="absolute right-2 top-1 grid h-4 min-w-4 place-items-center rounded-full bg-kred px-1 text-[10px] font-bold text-white">{unread}</span>}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col items-center gap-2 px-3 pb-[max(12px,env(safe-area-inset-bottom))]">
+        {overlay !== "map" && (
+          <div className="pointer-events-auto flex items-center gap-1 rounded-full bg-white/95 py-1 pl-3 pr-1 text-sm font-semibold shadow-lg">
+            <Icon emoji={place.emoji} size={18} className="text-kgreen" />
+            <button onClick={() => setHereOpen(!hereOpen)} className="flex max-w-[52vw] items-center gap-1 truncate px-1">
+              <span className="truncate">{place.name}</span>
+              <Icon name={hereOpen ? "chevron-down" : "chevron-up"} size={16} />
             </button>
-          ))}
+            <button onClick={() => dock("map")} aria-label="Map" className="grid h-9 w-9 place-items-center rounded-full hover:bg-black/5">
+              <Icon name="map" size={18} />
+            </button>
+          </div>
+        )}
+        <nav className="pointer-events-auto flex gap-1 rounded-2xl bg-white/95 p-1.5 shadow-xl" aria-label="Game">
+          {DOCK.map((d) => {
+            const disabled = d.id === "buy" && !atHome;
+            return (
+              <button
+                key={d.id}
+                disabled={disabled}
+                title={disabled ? "Go home to buy things for your place" : undefined}
+                onClick={() => dock(d.id)}
+                className={`relative flex w-[72px] flex-col items-center gap-0.5 rounded-xl py-1.5 text-[11px] font-semibold transition disabled:opacity-35 sm:w-24 ${active === d.id ? "bg-foreground text-background" : "text-muted enabled:hover:text-foreground"}`}
+              >
+                <Icon name={d.icon} size={22} />
+                {d.label}
+                {d.id === "phone" && unread > 0 && <span className="absolute right-3 top-1 grid h-4 min-w-4 place-items-center rounded-full bg-kred px-1 text-[10px] font-bold text-white">{unread}</span>}
+              </button>
+            );
+          })}
         </nav>
       </div>
 
-      {panel && (
-        <Drawer title={panel === "here" ? place.name : DOCK.find((d) => d.id === panel)?.label ?? ""} onClose={() => setPanel(null)}>
-          {panel === "here" && <Here s={game} onOpenMap={() => setPanel("map")} />}
-          {panel === "map" && <CityMap key={place.area} s={game} onArrive={() => setPanel(null)} />}
-          {panel === "phone" && <Phone s={game} />}
-          {panel === "home" && <HomePanel s={game} />}
-          {panel === "people" && <People s={game} />}
-          {panel === "me" && <Me s={game} />}
-        </Drawer>
-      )}
-
+      {overlay === "phone" && <PhoneOverlay s={game} />}
       {npc && <SocialSheet s={game} npc={npc} onClose={() => setNpc(null)} />}
       {game.event && <EventModal s={game} />}
       <PlayerSheet s={game} />
-      <ChatSheet />
     </main>
+  );
+}
+
+/** What's around you right now: the vibe, who's here, and the local shop. */
+function HereCard({ s, others, onClose, onNpc }: { s: GameState; others: Profile[]; onClose: () => void; onNpc: (id: string) => void }) {
+  const view = useOnline((st) => st.view);
+  const place = placeOf(s);
+  const area = AREA[place.area];
+  const npcs = npcsHere(s);
+  const players = others.filter((p) => p.venue === s.location && s.location !== "home");
+  const shop = groceryChannels(s).find((c) => c !== "delivery");
+  const [shopping, setShopping] = useState(false);
+  return (
+    <div className="absolute inset-x-0 bottom-36 z-10 flex justify-center px-3">
+      <div className="max-h-[50dvh] w-full max-w-md overflow-y-auto rounded-3xl bg-white/97 p-4 shadow-2xl">
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <div className="text-xs font-semibold uppercase tracking-wider text-muted">{area?.name}</div>
+            <div className="font-display text-xl font-bold">{place.name}</div>
+          </div>
+          <button onClick={onClose} aria-label="Close" className="grid h-8 w-8 place-items-center rounded-full hover:bg-black/5">
+            <Icon name="x" size={18} />
+          </button>
+        </div>
+        <p className="mt-1 text-sm italic text-muted">“{area?.vibe}”</p>
+        {(npcs.length > 0 || players.length > 0) && (
+          <div className="mt-3 flex gap-3 overflow-x-auto pb-1">
+            {players.map((p) => (
+              <button key={p.username} onClick={() => view(p.username)} className="flex w-14 shrink-0 flex-col items-center gap-1">
+                <Avatar look={p.look} size={44} ring="#2563eb" />
+                <span className="w-full truncate text-[10px] font-semibold">@{p.username}</span>
+              </button>
+            ))}
+            {npcs.map((id) => (
+              <button key={id} onClick={() => onNpc(id)} className="flex w-14 shrink-0 flex-col items-center gap-1">
+                <span className="grid h-11 w-11 place-items-center rounded-full bg-sun/30">
+                  <Icon emoji={NPC[id].emoji} size={22} />
+                </span>
+                <span className="w-full truncate text-[10px] font-semibold">{NPC[id].name}</span>
+              </button>
+            ))}
+          </div>
+        )}
+        {shop && (
+          <div className="mt-3">
+            <button onClick={() => setShopping(!shopping)} className="flex items-center gap-1 rounded-full bg-kgreen/10 px-3 py-1.5 text-sm font-semibold text-kgreen">
+              <Icon name="shopping-cart" size={16} /> {shop === "mamaMboga" ? "Mama Mboga" : "Supermarket"}
+            </button>
+            {shopping && (
+              <div className="mt-2">
+                <GroceryShop s={s} channel={shop} />
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -334,27 +404,6 @@ function Arrival({ s }: { s: GameState }) {
         <div className="font-display text-3xl font-extrabold">{place.name}</div>
         <div className="mt-1 max-w-xs text-sm italic text-muted">{area?.vibe}</div>
       </div>
-    </div>
-  );
-}
-
-function Drawer({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
-  return (
-    <div className="absolute inset-0 z-20 flex items-end bg-black/25 sm:items-stretch sm:justify-end" onClick={onClose}>
-      <aside className="flex max-h-[82vh] w-full flex-col overflow-hidden rounded-t-3xl bg-background shadow-2xl sm:max-h-none sm:w-[440px] sm:rounded-none sm:rounded-l-3xl" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between border-b border-line px-4 py-3">
-          <h2 className="font-display text-xl font-extrabold">{title}</h2>
-          <button onClick={onClose} aria-label="Close" className="grid h-9 w-9 place-items-center rounded-full hover:bg-black/5">
-            <Icon name="x" size={20} />
-          </button>
-        </div>
-        <div className="flex-1 overflow-y-auto p-3">{children}</div>
-      </aside>
     </div>
   );
 }

@@ -92,7 +92,9 @@ export type Command =
   /** Online M-Pesa: the server has already accepted these. */
   | { type: "transferOut"; to: string; amount: number }
   | { type: "transferIn"; from: string; amount: number; note: string }
-  | { type: "setLook"; look: import("../look").Look };
+  | { type: "setLook"; look: import("../look").Look }
+  /** A social with a real player (the message itself goes through the server). */
+  | { type: "playerSocial"; social: "hello" | "gist" | "joke" | "shade"; name: string };
 
 // ---------------------------------------------------------------------------
 // New game
@@ -250,6 +252,14 @@ function choose(state: GameState, index: number, rng: Rng) {
 /** Mutates the draft; returns false when the command isn't allowed. */
 function run(s: GameState, cmd: Exclude<Command, { type: "act" | "travel" | "choose" | "transferOut" | "transferIn" | "setLook" }>, rng: Rng): boolean {
   switch (cmd.type) {
+    case "playerSocial": {
+      const gain = { hello: { social: 8 }, gist: { social: 15, fun: 5 }, joke: { social: 12, fun: 10 }, shade: { social: 4, fun: 10 } }[cmd.social];
+      advance(s, 10, rng);
+      addNeeds(s, gain);
+      s.today.socials++;
+      progress(s, { social: true, tags: ["gist"] });
+      return true;
+    }
     case "social": {
       const def = SOCIAL[cmd.social];
       const npc = NPC[cmd.npc];

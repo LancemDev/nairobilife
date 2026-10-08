@@ -24,81 +24,126 @@ import {
   SHA_WEEKLY,
   VENUE,
 } from "@/game/data";
-import { canAfford, clock, dayOf, electionOdds, fulizaLimit, isWeekend, netWorth, price } from "@/game/engine";
+import { canAfford, clock, dayOf, electionOdds, fulizaLimit, isWeekend, netWorth, placeOf, price } from "@/game/engine";
 import { useGame } from "@/game/store";
 import type { GameState } from "@/game/types";
 import { splitIcon } from "@/game/icons";
 import { useOnline } from "@/online/store";
 import GroceryShop from "./GroceryShop";
-import { UjumbeApp, WatuApp } from "./Online";
+import HomePanel from "./HomePanel";
+import Me from "./Me";
+import { ChatView, UjumbeApp, WatuApp } from "./Online";
+import People from "./People";
+import { useUi, type PhoneApp } from "./uiStore";
 import { Icon } from "./Icon";
 import { Btn, Card, Empty, IconLabel, ksh, Row, Tabs } from "./ui";
 
-type App = "mpesa" | "benki" | "chakula" | "kazi" | "mali" | "ndege" | "siasa" | "gist" | "ujumbe" | "watu";
-const APPS: { id: App; label: string; emoji: string; color: string }[] = [
-  { id: "ujumbe", label: "Ujumbe", emoji: "💬", color: "bg-emerald-600" },
-  { id: "watu", label: "Watu", emoji: "👥", color: "bg-cyan-700" },
-  { id: "mpesa", label: "M-Pesa", emoji: "💸", color: "bg-kgreen" },
-  { id: "benki", label: "Benki", emoji: "🏦", color: "bg-sky-700" },
-  { id: "chakula", label: "Chakula", emoji: "🛵", color: "bg-orange-500" },
-  { id: "kazi", label: "Kazi", emoji: "💼", color: "bg-violet-700" },
-  { id: "mali", label: "Mali", emoji: "🏗️", color: "bg-amber-700" },
-  { id: "ndege", label: "Ndege", emoji: "🛫", color: "bg-kred" },
-  { id: "siasa", label: "Siasa", emoji: "🏛️", color: "bg-slate-700" },
-  { id: "gist", label: "Mtaa Gist", emoji: "🗞️", color: "bg-pink-600" },
+const APPS: { id: PhoneApp; label: string; icon: string; bg: string }[] = [
+  { id: "messages", label: "Messages", icon: "message-circle", bg: "from-sky-400 to-blue-600" },
+  { id: "contacts", label: "Contacts", icon: "phone", bg: "from-emerald-400 to-green-600" },
+  { id: "watu", label: "Watu", icon: "users", bg: "from-cyan-400 to-teal-600" },
+  { id: "profile", label: "Profile", icon: "user", bg: "from-violet-400 to-purple-700" },
+  { id: "houses", label: "Houses", icon: "home", bg: "from-amber-300 to-yellow-600" },
+  { id: "mpesa", label: "M-Pesa", icon: "cash", bg: "from-lime-400 to-green-700" },
+  { id: "benki", label: "Benki", icon: "building-bank", bg: "from-indigo-400 to-indigo-700" },
+  { id: "chakula", label: "Chakula", icon: "moped", bg: "from-orange-400 to-red-500" },
+  { id: "kazi", label: "Kazi", icon: "briefcase", bg: "from-teal-400 to-emerald-700" },
+  { id: "mali", label: "Mali", icon: "crane", bg: "from-amber-400 to-orange-600" },
+  { id: "ndege", label: "Ndege", icon: "plane-departure", bg: "from-rose-500 to-red-700" },
+  { id: "siasa", label: "Siasa", icon: "building-monument", bg: "from-slate-500 to-slate-800" },
+  { id: "gist", label: "Mtaa Gist", icon: "news", bg: "from-pink-400 to-fuchsia-600" },
 ];
 
-export default function Phone({ s }: { s: GameState }) {
-  const [app, setApp] = useState<App | null>(null);
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+/** A phone you hold up over the game: notch, wallpaper, big clock, app grid. */
+export default function PhoneOverlay({ s }: { s: GameState }) {
+  const { app, chatWith, openApp, open, setChat } = useUi();
   const unread = useOnline((st) => st.unread);
   const current = APPS.find((a) => a.id === app);
+  const day = dayOf(s.time);
+  // In-game calendar starts on Monday 5 October 2026 (Day 1).
+  const date = new Date(2026, 9, 4 + day);
+  const city = AREA[placeOf(s).area]?.city ?? "nairobi";
+  const close = () => open(null);
   return (
-    <div className="mx-auto max-w-md rounded-[2rem] border-4 border-foreground bg-foreground p-1.5 shadow-xl">
-      <div className="min-h-[560px] overflow-hidden rounded-[1.6rem] bg-background">
-        <div className="flex items-center justify-between bg-foreground px-5 py-1.5 font-mono text-xs text-background">
-          <span>{clock(s.time)}</span>
-          <span>Safaricom 4G ▮▮▮</span>
-        </div>
-        {!current ? (
-          <div className="p-5">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted">Net worth</p>
-            <p className="font-display text-3xl font-extrabold">{ksh(netWorth(s))}</p>
-            <div className="mt-6 grid grid-cols-4 gap-4">
-              {APPS.map((a) => (
-                <button key={a.id} onClick={() => setApp(a.id)} className="flex flex-col items-center gap-1.5">
-                  <span className={`relative grid h-14 w-14 place-items-center rounded-2xl text-2xl shadow-md ${a.color}`}>
-                    <Icon emoji={a.emoji} size={28} className="text-white" />
-                    {a.id === "ujumbe" && unread > 0 && <span className="absolute -right-1.5 -top-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-kred px-1 text-xs font-bold text-white">{unread}</span>}
-                  </span>
-                  <span className="text-[11px] font-semibold">{a.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <div>
-            <div className={`flex items-center gap-2 px-3 py-2.5 text-white ${current.color}`}>
-              <button onClick={() => setApp(null)} className="rounded-lg px-2 py-1 text-sm font-semibold hover:bg-white/15">
-                ← Home
-              </button>
-              <span className="font-display text-lg font-bold">
-                <IconLabel emoji={current.emoji} size={20}>{current.label}</IconLabel>
+    <div className="absolute inset-0 z-30 grid place-items-center bg-black/45 p-3 backdrop-blur-[2px]" onClick={close}>
+      <div className="relative flex h-[min(820px,calc(100dvh-24px))] w-[min(390px,calc(100vw-24px))] flex-col" onClick={(e) => e.stopPropagation()}>
+        <button onClick={close} className="absolute -top-1 right-0 z-10 flex -translate-y-full items-center gap-1 rounded-full bg-white px-3 py-1.5 text-sm font-semibold shadow-lg">
+          <Icon name="x" size={16} /> Close
+        </button>
+        <div className="mt-8 flex flex-1 flex-col overflow-hidden rounded-[3rem] border-[10px] border-[#111] bg-[#111] shadow-2xl">
+          <div className="relative flex flex-1 flex-col overflow-hidden rounded-[2.3rem] bg-gradient-to-b from-[#0b3d2e] via-[#1f6f50] to-[#f2a541]">
+            {/* status bar with the dynamic island */}
+            <div className={`relative flex items-center justify-between px-6 pb-1 pt-3 text-xs font-semibold ${current ? "bg-white text-foreground" : "text-white"}`}>
+              <span>{clock(s.time)}</span>
+              <span className="absolute left-1/2 top-2 h-6 w-24 -translate-x-1/2 rounded-full bg-black" />
+              <span className="flex items-center gap-1">
+                <Icon name="wifi" size={13} /> 4G
+                <span className="ml-1 h-2.5 w-5 rounded-sm border border-current p-px">
+                  <span className="block h-full w-3/4 rounded-[1px] bg-current" />
+                </span>
               </span>
             </div>
-            <div className="space-y-3 p-3">
-              {app === "mpesa" && <MPesa s={s} />}
-              {app === "benki" && <Benki s={s} />}
-              {app === "chakula" && <Chakula s={s} />}
-              {app === "kazi" && <Kazi s={s} />}
-              {app === "mali" && <Mali s={s} />}
-              {app === "ndege" && <Ndege s={s} />}
-              {app === "siasa" && <Siasa s={s} />}
-              {app === "gist" && <Gist s={s} />}
-              {app === "ujumbe" && <UjumbeApp />}
-              {app === "watu" && <WatuApp />}
-            </div>
+
+            {!current ? (
+              <div className="flex flex-1 flex-col overflow-y-auto px-5 pb-6 text-white">
+                <div className="mt-6">
+                  <div className="font-display text-7xl font-extrabold leading-none tracking-tight">{clock(s.time)}</div>
+                  <div className="mt-1 text-sm font-medium opacity-90">
+                    {DAYS[(day - 1) % 7]} {date.getDate()} {MONTHS[date.getMonth()]} · {city === "nairobi" ? "Nairobi" : city === "mombasa" ? "Mombasa" : "Kisumu"}
+                  </div>
+                  <div className="mt-1 font-mono text-xs opacity-75">Net worth {ksh(netWorth(s))}</div>
+                </div>
+                <div className="mt-8 grid grid-cols-4 gap-x-3 gap-y-5">
+                  {APPS.map((a) => (
+                    <button key={a.id} onClick={() => openApp(a.id)} className="flex flex-col items-center gap-1.5 transition active:scale-90">
+                      <span className={`relative grid h-[58px] w-[58px] place-items-center rounded-[18px] bg-gradient-to-br shadow-lg ${a.bg}`}>
+                        <Icon name={a.icon} size={28} stroke={2} className="text-white drop-shadow" />
+                        {a.id === "messages" && unread > 0 && <span className="absolute -right-1.5 -top-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-kred px-1 text-xs font-bold text-white shadow">{unread}</span>}
+                      </span>
+                      <span className="text-[11px] font-medium drop-shadow">{a.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-1 flex-col overflow-hidden bg-background">
+                <div className="flex items-center gap-2 border-b border-line bg-white px-3 py-2">
+                  <button
+                    onClick={() => (app === "messages" && chatWith ? setChat(null) : openApp(null))}
+                    aria-label="Back"
+                    className="grid h-8 w-8 place-items-center rounded-full hover:bg-black/5"
+                  >
+                    <Icon name="chevron-left" size={22} />
+                  </button>
+                  <span className={`grid h-7 w-7 place-items-center rounded-lg bg-gradient-to-br ${current.bg}`}>
+                    <Icon name={current.icon} size={16} className="text-white" />
+                  </span>
+                  <span className="font-display text-lg font-bold">{current.label}</span>
+                </div>
+                <div className="flex-1 space-y-3 overflow-y-auto p-3">
+                  {app === "messages" && (chatWith ? <ChatView username={chatWith} /> : <UjumbeApp />)}
+                  {app === "contacts" && <People s={s} />}
+                  {app === "watu" && <WatuApp />}
+                  {app === "profile" && <Me s={s} />}
+                  {app === "houses" && <HomePanel s={s} />}
+                  {app === "mpesa" && <MPesa s={s} />}
+                  {app === "benki" && <Benki s={s} />}
+                  {app === "chakula" && <Chakula s={s} />}
+                  {app === "kazi" && <Kazi s={s} />}
+                  {app === "mali" && <Mali s={s} />}
+                  {app === "ndege" && <Ndege s={s} />}
+                  {app === "siasa" && <Siasa s={s} />}
+                  {app === "gist" && <Gist s={s} />}
+                </div>
+              </div>
+            )}
+            {/* home indicator */}
+            <button onClick={() => openApp(null)} aria-label="Home screen" className={`mx-auto mb-2 mt-1 h-1.5 w-32 rounded-full ${current ? "bg-foreground/80" : "bg-white/90"}`} />
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
