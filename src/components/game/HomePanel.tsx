@@ -5,18 +5,18 @@ import { ESTATES, GROCERY, OBJECTS, RECIPES, UNIT } from "@/game/data";
 import { canAfford, estateOf, moveCost, price, unitOf, weeklyRent } from "@/game/engine";
 import { useGame } from "@/game/store";
 import type { GameState, HomeObject } from "@/game/types";
-import { Btn, Card, Empty, ksh, Row, Tabs } from "./ui";
+import { Btn, Card, Empty, IconLabel, ksh, Row, Tabs } from "./ui";
 
-const CATS: { id: HomeObject["cat"]; label: string }[] = [
-  { id: "sleep", label: "🛏️ Sleep" },
-  { id: "kitchen", label: "🍳 Kitchen" },
-  { id: "bath", label: "🚿 Bath" },
-  { id: "comfort", label: "🛋️ Comfort" },
-  { id: "fun", label: "📺 Fun" },
-  { id: "skill", label: "🎸 Skills" },
-  { id: "power", label: "⚡ Power" },
-  { id: "decor", label: "🪴 Decor" },
-  { id: "luxury", label: "💎 Luxury" },
+const CATS: { id: HomeObject["cat"]; label: React.ReactNode }[] = [
+  { id: "sleep", label: <IconLabel emoji="🛏️">Sleep</IconLabel> },
+  { id: "kitchen", label: <IconLabel emoji="🍳">Kitchen</IconLabel> },
+  { id: "bath", label: <IconLabel emoji="🚿">Bath</IconLabel> },
+  { id: "comfort", label: <IconLabel emoji="🛋️">Comfort</IconLabel> },
+  { id: "fun", label: <IconLabel emoji="📺">Fun</IconLabel> },
+  { id: "skill", label: <IconLabel emoji="🎸">Skills</IconLabel> },
+  { id: "power", label: <IconLabel emoji="⚡">Power</IconLabel> },
+  { id: "decor", label: <IconLabel emoji="🪴">Decor</IconLabel> },
+  { id: "luxury", label: <IconLabel emoji="💎">Luxury</IconLabel> },
 ];
 
 export default function HomePanel({ s }: { s: GameState }) {
@@ -30,13 +30,13 @@ export default function HomePanel({ s }: { s: GameState }) {
 
   return (
     <div className="space-y-3">
-      <Card title={`🏠 ${unit.name}, ${estate.name}`}>
+      <Card title={<IconLabel emoji="🏠">{`${unit.name}, ${estate.name}`}</IconLabel>}>
         <p className="-mt-2 text-sm text-muted">{estate.blurb}</p>
         <p className="mt-2 text-sm">
           Rent {ksh(weeklyRent(s))}/week, due Mondays · {s.objects.length}/{unit.slots} items
         </p>
       </Card>
-      <Tabs value={tab} onChange={setTab} items={[{ id: "buy", label: "🛒 Buy mode" }, { id: "pantry", label: "🥫 Pantry" }, { id: "move", label: "🚚 Move house" }]} />
+      <Tabs value={tab} onChange={setTab} items={[{ id: "buy", label: <IconLabel emoji="🛒">Buy mode</IconLabel> }, { id: "pantry", label: <IconLabel emoji="🥫">Pantry</IconLabel> }, { id: "move", label: <IconLabel emoji="🚚">Move house</IconLabel> }]} />
 
       {tab === "buy" && (
         <>
@@ -55,7 +55,7 @@ export default function HomePanel({ s }: { s: GameState }) {
               return (
                 <Row
                   key={o.id}
-                  left={`${o.emoji} ${o.name}`}
+                  left={<IconLabel emoji={o.emoji}>{`${o.name}`}</IconLabel>}
                   sub={`${ksh(cost)} · ${o.desc}`}
                   right={
                     owned ? (
@@ -85,7 +85,7 @@ export default function HomePanel({ s }: { s: GameState }) {
                 .filter(([, n]) => n > 0)
                 .map(([id, n]) => (
                   <span key={id} className="rounded-full border border-line px-3 py-1 text-sm">
-                    {GROCERY[id].emoji} {GROCERY[id].name} ×{n}
+                    <IconLabel emoji={GROCERY[id].emoji}>{GROCERY[id].name} ×{n}</IconLabel>
                   </span>
                 ))}
             </div>
@@ -94,7 +94,7 @@ export default function HomePanel({ s }: { s: GameState }) {
           <ul className="mt-2 space-y-1 text-sm">
             {RECIPES.map((r) => (
               <li key={r.id}>
-                {r.emoji} <span className="font-semibold">{r.name}</span>: {Object.keys(r.needs).map((g) => GROCERY[g].name.split(" (")[0].toLowerCase()).join(", ")}
+                <IconLabel emoji={r.emoji}><span className="font-semibold">{r.name}</span></IconLabel>: {Object.keys(r.needs).map((g) => GROCERY[g].name.split(" (")[0].toLowerCase()).join(", ")}
                 {r.cooking > 0 && <span className="text-muted"> · cooking {r.cooking}+</span>}
               </li>
             ))}
@@ -106,7 +106,7 @@ export default function HomePanel({ s }: { s: GameState }) {
         <div className="space-y-2">
           {s.arrears > 0 && <p className="text-sm text-kred">Clear your rent arrears before moving.</p>}
           {ESTATES.map((e) => (
-            <Card key={e.id} title={e.name} right={<span className="text-xs text-muted">🚱 {Math.round(e.water * 100)}% · 🔊 {e.noise}</span>}>
+            <Card key={e.id} title={e.name} right={<span className="flex gap-2 text-xs text-muted"><IconLabel name="droplet-off" size={14}>{Math.round(e.water * 100)}%</IconLabel><IconLabel name="volume" size={14}>{e.noise}</IconLabel></span>}>
               <p className="-mt-2 mb-2 text-sm text-muted">{e.blurb}</p>
               <div className="grid gap-1.5">
                 {e.units.map((u) => {

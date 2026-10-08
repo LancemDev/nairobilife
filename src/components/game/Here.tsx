@@ -5,11 +5,13 @@ import { AREA, NPC, SOCIALS, relLabel } from "@/game/data";
 import { availableActions, clock, dayOf, groceryChannels, npcsHere, placeOf, socialBlocked, socialOdds } from "@/game/engine";
 import { useGame } from "@/game/store";
 import type { ActionView, GameState } from "@/game/types";
+import { splitIcon } from "@/game/icons";
 import { api, type Profile } from "@/online/api";
 import { useOnline } from "@/online/store";
 import { Avatar } from "./Avatar";
 import GroceryShop from "./GroceryShop";
-import { Btn, Card, duration, ksh, Meter, Sheet } from "./ui";
+import { Icon } from "./Icon";
+import { Btn, Card, duration, IconLabel, ksh, Meter, Sheet } from "./ui";
 
 export default function Here({ s, onOpenMap }: { s: GameState; onOpenMap: () => void }) {
   const send = useGame((st) => st.send);
@@ -29,18 +31,18 @@ export default function Here({ s, onOpenMap }: { s: GameState; onOpenMap: () => 
           <div className="flex items-start justify-between gap-3">
             <div>
               <div className="text-xs font-semibold uppercase tracking-wider text-muted">
-                {area.emoji} {area.name}
+                <IconLabel emoji={area.emoji}>{area.name}</IconLabel>
               </div>
               <h2 className="font-display text-3xl font-extrabold leading-tight">
-                {place.emoji} {place.name}
+                <IconLabel emoji={place.emoji} size={26}>{place.name}</IconLabel>
               </h2>
             </div>
             <Btn variant="ghost" onClick={onOpenMap}>
-              🗺️ Go
+              <IconLabel name="map">Go</IconLabel>
             </Btn>
           </div>
           <p className="mt-1 text-muted">{place.blurb}</p>
-          <p className="mt-2 text-sm italic">💬 {area.vibe}</p>
+          <p className="mt-2 text-sm italic">“{area.vibe}”</p>
           {(people.length > 0 || channels.length > 0) && (
             <div className="mt-3 flex flex-wrap gap-2">
               {people.map((id) => {
@@ -48,7 +50,7 @@ export default function Here({ s, onOpenMap }: { s: GameState; onOpenMap: () => 
                 const r = s.relationships[id];
                 return (
                   <button key={id} onClick={() => setNpc(id)} className="flex items-center gap-2 rounded-full border border-line bg-background/60 py-1 pl-1 pr-3 text-sm transition hover:border-foreground">
-                    <span className="grid h-7 w-7 place-items-center rounded-full bg-sun/30 text-base">{n.emoji}</span>
+                    <span className="grid h-7 w-7 place-items-center rounded-full bg-sun/30"><Icon emoji={n.emoji} size={16} /></span>
                     <span className="font-semibold">{n.name}</span>
                     <span className="text-xs" style={{ color: relLabel(r?.rel ?? 0, r?.bae, r?.married).color }}>
                       {relLabel(r?.rel ?? 0, r?.bae, r?.married).label}
@@ -58,7 +60,7 @@ export default function Here({ s, onOpenMap }: { s: GameState; onOpenMap: () => 
               })}
               {channels.length > 0 && (
                 <button onClick={() => setShop(true)} className="flex items-center gap-2 rounded-full border border-kgreen/40 bg-kgreen/10 px-3 py-1 text-sm font-semibold text-kgreen transition hover:border-kgreen">
-                  🛒 {channels[0] === "mamaMboga" ? "Mama Mboga" : "Supermarket"}
+                  <IconLabel name="shopping-cart">{channels[0] === "mamaMboga" ? "Mama Mboga" : "Supermarket"}</IconLabel>
                 </button>
               )}
             </div>
@@ -81,7 +83,7 @@ export default function Here({ s, onOpenMap }: { s: GameState; onOpenMap: () => 
       <Diary s={s} />
       {npc && <SocialSheet s={s} npc={npc} onClose={() => setNpc(null)} />}
       {shop && (
-        <Sheet title={channels[0] === "mamaMboga" ? "🥬 Mama Mboga" : "🛒 Supermarket"} onClose={() => setShop(false)}>
+        <Sheet title={channels[0] === "mamaMboga" ? "Mama Mboga" : "Supermarket"} onClose={() => setShop(false)}>
           <GroceryShop s={s} channel={channels[0]} />
         </Sheet>
       )}
@@ -109,7 +111,7 @@ function PlayersHere({ area, location }: { area: string; location: string }) {
   }, [me, area, location]);
   if (!me || !players.length) return null;
   return (
-    <Card title={`🟢 Players around ${AREA[area]?.name ?? ""}`}>
+    <Card title={`Players around ${AREA[area]?.name ?? ""}`}>
       <div className="flex gap-3 overflow-x-auto pb-1">
         {players.map((p) => (
           <button key={p.username} onClick={() => view(p.username)} className="flex w-16 shrink-0 flex-col items-center gap-1 text-center">
@@ -125,12 +127,12 @@ function PlayersHere({ area, location }: { area: string; location: string }) {
 function ActionButton({ a, onClick }: { a: ActionView; onClick: () => void }) {
   return (
     <button onClick={onClick} disabled={!!a.disabled} className="flex h-full w-full gap-3 rounded-xl border border-line bg-background/60 p-3 text-left transition enabled:hover:border-foreground enabled:hover:bg-sun/20 enabled:active:scale-[0.98] disabled:opacity-50">
-      <span className="text-2xl">{a.emoji}</span>
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-sun/25"><Icon emoji={a.emoji} size={22} /></span>
       <span className="min-w-0 flex-1">
         <span className="block font-semibold leading-snug">{a.label}</span>
         <span className="block text-sm text-muted">{a.disabled ?? a.detail}</span>
         <span className="mt-1 flex gap-3 font-mono text-xs text-muted">
-          <span>⏱ {duration(a.minutes)}</span>
+          <IconLabel name="clock" size={12}>{duration(a.minutes)}</IconLabel>
           {a.cost > 0 && <span>{ksh(a.cost)}</span>}
         </span>
       </span>
@@ -138,14 +140,14 @@ function ActionButton({ a, onClick }: { a: ActionView; onClick: () => void }) {
   );
 }
 
-function SocialSheet({ s, npc, onClose }: { s: GameState; npc: string; onClose: () => void }) {
+export function SocialSheet({ s, npc, onClose }: { s: GameState; npc: string; onClose: () => void }) {
   const send = useGame((st) => st.send);
   const n = NPC[npc];
   const r = s.relationships[npc] ?? { rel: 0 };
   const label = relLabel(r.rel, r.bae, r.married);
   const present = npcsHere(s).includes(npc);
   return (
-    <Sheet title={`${n.emoji} ${n.name}, ${n.age}`} onClose={onClose}>
+    <Sheet title={<IconLabel emoji={n.emoji} size={22}>{`${n.name}, ${n.age}`}</IconLabel>} onClose={onClose}>
       <p className="text-muted">{n.bio}</p>
       <p className="mt-2 italic">{n.line}</p>
       <div className="mt-3">
@@ -158,7 +160,7 @@ function SocialSheet({ s, npc, onClose }: { s: GameState; npc: string; onClose: 
           return (
             <button key={soc.id} disabled={!!blocked || !present || !!s.event} onClick={() => send({ type: "social", npc, social: soc.id })} className="rounded-xl border border-line bg-background/60 p-2.5 text-left text-sm transition enabled:hover:border-foreground disabled:opacity-40">
               <div className="font-semibold">
-                {soc.emoji} {soc.label}
+                <IconLabel emoji={soc.emoji}>{soc.label}</IconLabel>
               </div>
               <div className="text-xs text-muted">{blocked ?? `${Math.round(socialOdds(s, soc.id) * 100)}% · ${soc.minutes}m`}</div>
             </button>
@@ -179,7 +181,7 @@ function Diary({ s }: { s: GameState }) {
             <span className="shrink-0 font-mono text-xs leading-5 text-muted">
               D{dayOf(e.time)} {clock(e.time)}
             </span>
-            <span className={tone[e.tone]}>{e.text}</span>
+            <IconLabel name={splitIcon(e.text).icon ?? "point"} className={`!whitespace-normal ${tone[e.tone]}`}>{splitIcon(e.text).text}</IconLabel>
           </li>
         ))}
       </ol>

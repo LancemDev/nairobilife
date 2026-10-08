@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, type ReactNode } from "react";
+import { Icon } from "./Icon";
 
 export const ksh = (n: number) => `${n < 0 ? "−" : ""}KSh ${Math.abs(Math.round(n)).toLocaleString("en-KE")}`;
 
@@ -122,5 +123,15 @@ export function Row({ left, right, sub }: { left: ReactNode; right?: ReactNode; 
       </div>
       {right && <div className="shrink-0">{right}</div>}
     </div>
+  );
+}
+
+/** Icon + text inline, for labels that used to start with an emoji. */
+export function IconLabel({ emoji, name, children, size = 16, className = "" }: { emoji?: string; name?: string; children: ReactNode; size?: number; className?: string }) {
+  return (
+    <span className={`inline-flex min-w-0 items-center gap-1.5 ${className}`}>
+      <Icon emoji={emoji} name={name} size={size} className="opacity-80" />
+      <span className="min-w-0">{children}</span>
+    </span>
   );
 }

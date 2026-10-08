@@ -10,7 +10,7 @@ import type { GameState } from "@/game/types";
 import { api, type Message, type Profile, type Thread } from "@/online/api";
 import { useOnline } from "@/online/store";
 import { Avatar, AvatarBuilder } from "./Avatar";
-import { Btn, Empty, ksh, Sheet, Tabs } from "./ui";
+import { Btn, Empty, IconLabel, ksh, Sheet, Tabs } from "./ui";
 
 const ago = (t: number) => {
   const m = Math.round((Date.now() - t) / 60_000);
@@ -78,7 +78,7 @@ export function PlayerSheet({ s }: { s: GameState }) {
     try {
       const res = await api.send(username, amount, note);
       send({ type: "transferOut", to: res.to, amount: res.amount });
-      setMsg(`✅ Sent ${ksh(res.amount)} to ${res.toName}.`);
+      setMsg(`Sent ${ksh(res.amount)} to ${res.toName}.`);
       setNote("");
     } catch (e) {
       setMsg(e instanceof Error ? e.message : "Couldn't send.");
@@ -92,12 +92,12 @@ export function PlayerSheet({ s }: { s: GameState }) {
       ) : (
         <div className="space-y-4">
           <div className="flex items-center gap-4">
-            <Avatar look={p.look} size={88} />
+            <Avatar look={p.look} size={72} variant="full" />
             <div className="min-w-0">
               <div className="text-sm text-muted">@{p.username}</div>
               <div className="font-semibold">{p.title || "Mwananchi"}</div>
               <div className="text-sm">
-                {p.online ? "🟢 Online" : "⚪ Offline"} · {where(p)}
+                {p.online ? "Online" : "Offline"} · {where(p)}
               </div>
               <div className="font-mono text-sm">Net worth {ksh(p.netWorth)}</div>
             </div>
@@ -113,10 +113,10 @@ export function PlayerSheet({ s }: { s: GameState }) {
           ) : (
             <>
               <Btn className="w-full" onClick={() => chat(p.username)}>
-                💬 Message
+                <IconLabel name="message-circle">Message</IconLabel>
               </Btn>
               <div className="rounded-xl border border-line p-3">
-                <div className="mb-2 text-sm font-semibold">📲 Send M-Pesa</div>
+                <div className="mb-2 text-sm font-semibold"><IconLabel name="device-mobile-message">Send M-Pesa</IconLabel></div>
                 <div className="flex flex-wrap gap-1">
                   {[100, 500, 1000, 5000, 20000].map((a) => (
                     <button key={a} onClick={() => setAmount(a)} className={`rounded-full border px-3 py-1 text-sm ${amount === a ? "border-foreground bg-sun/40" : "border-line"}`}>
@@ -131,10 +131,10 @@ export function PlayerSheet({ s }: { s: GameState }) {
               </div>
               <div className="flex gap-2">
                 <Btn variant="ghost" className="flex-1" onClick={async () => setData({ ...data, blocked: (await api.block(p.username, true)).blocked })}>
-                  🚫 Block
+                  <IconLabel name="ban">Block</IconLabel>
                 </Btn>
                 <Btn variant="danger" className="flex-1" onClick={() => setReport(!report)}>
-                  🚩 Report
+                  <IconLabel name="flag">Report</IconLabel>
                 </Btn>
               </div>
               {report && (
@@ -231,7 +231,7 @@ export function ChatSheet() {
       onClose={close}
     >
       <div className="flex min-h-[40vh] flex-col gap-2">
-        {messages.length === 0 && <Empty>Say rada 👋🏾</Empty>}
+        {messages.length === 0 && <Empty>Say rada!</Empty>}
         {messages.map((m) => (
           <div key={m.id} className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${m.mine ? "self-end rounded-br-sm bg-kgreen text-white" : "self-start rounded-bl-sm bg-line/70"}`}>
             {m.body}
@@ -322,7 +322,7 @@ export function WatuApp() {
           setTab(t);
           setList(null);
         }}
-        items={[{ id: "online", label: "🟢 Online" }, { id: "search", label: "🔍 Search" }, { id: "rich", label: "💰 Rich List" }]}
+        items={[{ id: "online", label: <IconLabel emoji="🟢">Online</IconLabel> }, { id: "search", label: <IconLabel emoji="🔍">Search</IconLabel> }, { id: "rich", label: <IconLabel emoji="💰">Rich List</IconLabel> }]}
       />
       {tab === "search" && <input value={q} onChange={(e) => setQ(e.target.value.toLowerCase())} placeholder="Search usernames" autoCapitalize="none" className="w-full rounded-xl border border-line bg-card px-3 py-2" />}
       {shown === null ? (

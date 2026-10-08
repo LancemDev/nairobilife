@@ -7,7 +7,7 @@ import type { GameState } from "@/game/types";
 import { api } from "@/online/api";
 import { useOnline } from "@/online/store";
 import { Avatar } from "./Avatar";
-import { Btn, ksh, Sheet, Tabs } from "./ui";
+import { Btn, IconLabel, ksh, Sheet, Tabs } from "./ui";
 
 type Conflict = { cloud: GameState; local: GameState };
 
@@ -67,7 +67,7 @@ export default function Account({ onClose, initial = "register" }: { onClose: ()
               <button key={k} disabled={busy} onClick={() => keep(k)} className="flex items-center gap-3 rounded-xl border border-line p-3 text-left transition hover:border-foreground">
                 <Avatar look={g.player.look} size={44} />
                 <span className="min-w-0 flex-1">
-                  <span className="block font-semibold">{k === "cloud" ? "☁️ Your saved life" : "📱 This device"}</span>
+                  <span className="block font-semibold"><IconLabel name={k === "cloud" ? "cloud" : "device-mobile"}>{k === "cloud" ? "Your saved life" : "This device"}</IconLabel></span>
                   <span className="block text-sm text-muted">
                     {g.player.name} · Day {dayOf(g.time)} · {ksh(netWorth(g))}
                   </span>

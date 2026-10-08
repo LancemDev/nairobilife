@@ -7,7 +7,8 @@ import { weeklyRent } from "@/game/engine";
 import { useGame } from "@/game/store";
 import type { GameState } from "@/game/types";
 import { AvatarBuilder } from "./Avatar";
-import { ksh } from "./ui";
+import { Icon } from "./Icon";
+import { IconLabel, ksh } from "./ui";
 
 const STEPS = ["Look", "Personality", "Dream", "Birth lottery"] as const;
 
@@ -62,15 +63,15 @@ export default function Creator({ onBack }: { onBack: () => void }) {
         <div className="mt-2 space-y-4">
           <h1 className="font-display text-4xl font-extrabold">Pick two traits</h1>
           <p className="text-muted">They change how fast your needs drop, which skills you learn quickly, and what you enjoy.</p>
-          <Grid items={TRAITS.map((t) => ({ id: t.id, title: `${t.emoji} ${t.label}`, desc: t.desc }))} selected={traits} onPick={toggleTrait} />
+          <Grid items={TRAITS.map((t) => ({ id: t.id, title: <IconLabel emoji={t.emoji}>{t.label}</IconLabel>, desc: t.desc }))} selected={traits} onPick={toggleTrait} />
         </div>
       )}
 
       {step === 2 && (
         <div className="mt-2 space-y-4">
           <h1 className="font-display text-4xl font-extrabold">Your lifetime dream</h1>
-          <p className="text-muted">Achieve it for a big ✨ bonus and bragging rights.</p>
-          <Grid items={ASPIRATIONS.map((a) => ({ id: a.id, title: `${a.emoji} ${a.label}`, desc: a.desc }))} selected={[aspirationId]} onPick={setAspiration} />
+          <p className="text-muted">Achieve it for a big vibes bonus and bragging rights.</p>
+          <Grid items={ASPIRATIONS.map((a) => ({ id: a.id, title: <IconLabel emoji={a.emoji}>{a.label}</IconLabel>, desc: a.desc }))} selected={[aspirationId]} onPick={setAspiration} />
         </div>
       )}
 
@@ -84,12 +85,12 @@ export default function Creator({ onBack }: { onBack: () => void }) {
               return (
                 <button key={l.id} onClick={() => setLottery(l.id)} aria-pressed={lotteryId === l.id} className={`rounded-2xl border p-4 text-left transition ${lotteryId === l.id ? "border-foreground bg-sun/30" : "border-line bg-card hover:border-muted"}`}>
                   <div className="flex items-baseline justify-between gap-2">
-                    <span className="font-display text-xl font-bold">{l.emoji} {l.label}</span>
+                    <IconLabel emoji={l.emoji} size={22} className="font-display text-xl font-bold">{l.label}</IconLabel>
                     <span className="font-mono text-sm">{ksh(l.money)}</span>
                   </div>
                   <p className="mt-1 text-sm text-muted">{l.desc}</p>
                   <p className="mt-2 text-xs text-muted">
-                    🏠 {UNIT[l.unit].name}, {ESTATE[l.estate].name} · {ksh(rent)}/wk{l.allowance ? ` · +${ksh(l.allowance)}/wk from family` : ""}
+                    <Icon name="home" size={13} className="mr-1 inline" />{UNIT[l.unit].name}, {ESTATE[l.estate].name} · {ksh(rent)}/wk{l.allowance ? ` · +${ksh(l.allowance)}/wk from family` : ""}
                   </p>
                 </button>
               );
@@ -103,13 +104,13 @@ export default function Creator({ onBack }: { onBack: () => void }) {
         onClick={() => (step < STEPS.length - 1 ? setStep(step + 1) : start({ name: name.trim(), avatar: "🧑🏾", look, originId, traits, aspirationId, lotteryId: lotteryId! }))}
         className="mt-8 w-full rounded-2xl bg-foreground px-6 py-4 font-display text-xl font-bold text-background transition enabled:hover:bg-kgreen disabled:opacity-40"
       >
-        {step < STEPS.length - 1 ? "Next →" : "Move to Kanairo 🚐"}
+        {step < STEPS.length - 1 ? "Next →" : "Move to Kanairo"}
       </button>
     </main>
   );
 }
 
-function Grid({ items, selected, onPick }: { items: { id: string; title: string; desc: string }[]; selected: string[]; onPick: (id: string) => void }) {
+function Grid({ items, selected, onPick }: { items: { id: string; title: React.ReactNode; desc: string }[]; selected: string[]; onPick: (id: string) => void }) {
   return (
     <div className="grid gap-2 sm:grid-cols-2">
       {items.map((item) => (

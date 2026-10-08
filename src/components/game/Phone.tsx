@@ -27,11 +27,13 @@ import {
 import { canAfford, clock, dayOf, electionOdds, fulizaLimit, isWeekend, netWorth, price } from "@/game/engine";
 import { useGame } from "@/game/store";
 import type { GameState } from "@/game/types";
+import { splitIcon } from "@/game/icons";
 import { useOnline } from "@/online/store";
 import Account from "./Account";
 import GroceryShop from "./GroceryShop";
 import { UjumbeApp, WatuApp } from "./Online";
-import { Btn, Card, Empty, ksh, Row, Tabs } from "./ui";
+import { Icon } from "./Icon";
+import { Btn, Card, Empty, IconLabel, ksh, Row, Tabs } from "./ui";
 
 type App = "mpesa" | "benki" | "chakula" | "kazi" | "mali" | "ndege" | "siasa" | "gist" | "ujumbe" | "watu";
 const APPS: { id: App; label: string; emoji: string; color: string }[] = [
@@ -67,7 +69,7 @@ export default function Phone({ s }: { s: GameState }) {
               {APPS.map((a) => (
                 <button key={a.id} onClick={() => setApp(a.id)} className="flex flex-col items-center gap-1.5">
                   <span className={`relative grid h-14 w-14 place-items-center rounded-2xl text-2xl shadow-md ${a.color}`}>
-                    {a.emoji}
+                    <Icon emoji={a.emoji} size={28} className="text-white" />
                     {a.id === "ujumbe" && unread > 0 && <span className="absolute -right-1.5 -top-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-kred px-1 text-xs font-bold text-white">{unread}</span>}
                   </span>
                   <span className="text-[11px] font-semibold">{a.label}</span>
@@ -82,7 +84,7 @@ export default function Phone({ s }: { s: GameState }) {
                 ← Home
               </button>
               <span className="font-display text-lg font-bold">
-                {current.emoji} {current.label}
+                <IconLabel emoji={current.emoji} size={20}>{current.label}</IconLabel>
               </span>
             </div>
             <div className="space-y-3 p-3">
@@ -109,7 +111,7 @@ function GoOnline() {
     <Card>
       <p className="text-sm">Create a profile to message real players, see who&apos;s around, and send M-Pesa to friends.</p>
       <Btn className="mt-3 w-full" onClick={() => setOpen(true)}>
-        🌐 Go online
+        <IconLabel name="world">Go online</IconLabel>
       </Btn>
       {open && <Account onClose={() => setOpen(false)} />}
     </Card>
@@ -136,7 +138,7 @@ function MPesa({ s }: { s: GameState }) {
             {contacts.map(([id]) => (
               <Row
                 key={id}
-                left={`${NPC[id].emoji} ${NPC[id].name}`}
+                left={<IconLabel emoji={NPC[id].emoji}>{`${NPC[id].name}`}</IconLabel>}
                 right={
                   <div className="flex gap-1">
                     {[200, 1000].map((amt) => (
@@ -195,7 +197,7 @@ function Benki({ s }: { s: GameState }) {
           </>
         )}
       </Card>
-      <Card title="📱 Haraka Loans">
+      <Card title={<IconLabel name="device-mobile">Haraka Loans</IconLabel>}>
         <p className="text-sm text-kred">12% interest every week. Digital lenders will call your mum.</p>
         <p className="mt-1 font-mono">Owed: {ksh(b.loan)} / limit {ksh(BANK.loanMax)}</p>
         <div className="mt-2 flex flex-wrap gap-1">
@@ -221,7 +223,7 @@ function Chakula({ s }: { s: GameState }) {
   const [tab, setTab] = useState<"food" | "groceries">("food");
   return (
     <>
-      <Tabs value={tab} onChange={setTab} items={[{ id: "food", label: "🍗 Food" }, { id: "groceries", label: "🥬 Groceries" }]} />
+      <Tabs value={tab} onChange={setTab} items={[{ id: "food", label: <IconLabel emoji="🍗">Food</IconLabel> }, { id: "groceries", label: <IconLabel emoji="🥬">Groceries</IconLabel> }]} />
       {tab === "food" ? (
         <div className="space-y-2">
           <p className="text-sm text-muted">Delivered in 40 minutes, wherever you are. +{ksh(DELIVERY_FEE)} delivery.</p>
@@ -230,7 +232,7 @@ function Chakula({ s }: { s: GameState }) {
             return (
               <Row
                 key={m.id}
-                left={`${m.emoji} ${m.name}`}
+                left={<IconLabel emoji={m.emoji}>{`${m.name}`}</IconLabel>}
                 sub={`+${m.hunger} hunger · ${ksh(cost)}`}
                 right={
                   <Btn disabled={!canAfford(s, cost) || !!s.event} onClick={() => send({ type: "orderFood", id: m.id })}>
@@ -260,8 +262,8 @@ function Kazi({ s }: { s: GameState }) {
         return (
           <Row
             key={c.id}
-            left={`${c.emoji} ${c.name}: ${entry.title}`}
-            sub={`${ksh(entry.pay)}/shift → ${ksh(c.levels.at(-1)!.pay)} as ${c.levels.at(-1)!.title} · 📍 ${v.name}, ${AREA[v.area].name}${missing.length ? ` · needs ${missing.map(([k, n]) => `${k} ${n}`).join(", ")}` : ""}${entry.degree ? " · degree" : ""}`}
+            left={<IconLabel emoji={c.emoji}>{`${c.name}: ${entry.title}`}</IconLabel>}
+            sub={`${ksh(entry.pay)}/shift → ${ksh(c.levels.at(-1)!.pay)} as ${c.levels.at(-1)!.title} · ${v.name}, ${AREA[v.area].name}${missing.length ? ` · needs ${missing.map(([k, n]) => `${k} ${n}`).join(", ")}` : ""}${entry.degree ? " · degree" : ""}`}
             right={s.job?.career === c.id ? <span className="text-xs font-semibold text-kgreen">Your job</span> : ready ? <span className="text-xs font-semibold text-kgreen">Ready ✓</span> : null}
           />
         );
@@ -276,7 +278,7 @@ function Mali({ s }: { s: GameState }) {
   const blocked = !!s.event;
   return (
     <>
-      <Tabs value={tab} onChange={setTab} items={[{ id: "land", label: "📐 Land" }, { id: "biz", label: "💼 Biashara" }, { id: "cars", label: "🚗 Magari" }]} />
+      <Tabs value={tab} onChange={setTab} items={[{ id: "land", label: <IconLabel emoji="📐">Land</IconLabel> }, { id: "biz", label: <IconLabel emoji="💼">Biashara</IconLabel> }, { id: "cars", label: <IconLabel emoji="🚗">Magari</IconLabel> }]} />
       {tab === "land" && (
         <div className="space-y-2">
           {s.plots.length > 0 && (
@@ -286,7 +288,7 @@ function Mali({ s }: { s: GameState }) {
                   <Row
                     key={i}
                     left={PLOT[p.id].name}
-                    sub={p.fake ? "❌ Fake title. Worthless." : `Paid ${ksh(p.paid)} · worth ${ksh(p.value)} (${p.value >= p.paid ? "+" : ""}${(((p.value - p.paid) / p.paid) * 100).toFixed(1)}%)`}
+                    sub={p.fake ? "Fake title. Worthless." : `Paid ${ksh(p.paid)} · worth ${ksh(p.value)} (${p.value >= p.paid ? "+" : ""}${(((p.value - p.paid) / p.paid) * 100).toFixed(1)}%)`}
                     right={!p.fake && <Btn variant="ghost" disabled={blocked} onClick={() => send({ type: "sellPlot", index: i })}>Sell {ksh(p.value * (1 - LAND_SELL_FEE))}</Btn>}
                   />
                 ))}
@@ -321,7 +323,7 @@ function Mali({ s }: { s: GameState }) {
             return (
               <Row
                 key={b.id}
-                left={`${b.emoji} ${b.name}`}
+                left={<IconLabel emoji={b.emoji}>{`${b.name}`}</IconLabel>}
                 sub={`${ksh(b.price)} · ${ksh(b.weekly[0])}–${ksh(b.weekly[1])}/week · ${b.blurb}`}
                 right={owned ? <Btn variant="ghost" disabled={blocked} onClick={() => send({ type: "sellBusiness", id: b.id })}>Sell</Btn> : <Btn disabled={s.money < b.price || blocked} onClick={() => send({ type: "buyBusiness", id: b.id })}>Buy</Btn>}
               />
@@ -337,7 +339,7 @@ function Mali({ s }: { s: GameState }) {
             return (
               <Row
                 key={c.id}
-                left={`${c.emoji} ${c.name}`}
+                left={<IconLabel emoji={c.emoji}>{`${c.name}`}</IconLabel>}
                 sub={`${ksh(c.price)} · ${c.blurb}`}
                 right={
                   owned ? (
@@ -401,7 +403,7 @@ function Ndege({ s }: { s: GameState }) {
             className="absolute text-4xl transition-transform"
             style={{ left: `${Math.min(80, ((shown ?? 1) - 1) * 18 + 5)}%`, bottom: `${Math.min(70, ((shown ?? 1) - 1) * 14 + 5)}%` }}
           >
-            {done && !bet!.won ? "💥" : "🛫"}
+            <Icon name={done && !bet!.won ? "flame" : "plane-departure"} size={36} className={done && !bet!.won ? "text-kred" : "text-foreground"} />
           </div>
           <div className="absolute inset-0 grid place-items-center">
             <span className={`font-mono text-4xl font-extrabold ${done ? (bet!.won ? "text-kgreen" : "text-kred") : ""}`}>{(shown ?? 1).toFixed(2)}x</span>
@@ -430,7 +432,7 @@ function Ndege({ s }: { s: GameState }) {
           {flying ? "Flying…" : `Fly for ${ksh(stake)}`}
         </Btn>
       </Card>
-      <Card title="⚽ Mashemeji Derby">
+      <Card title={<IconLabel name="ball-football">Mashemeji Derby</IconLabel>}>
         {isWeekend(s.time) ? (
           <div className="grid grid-cols-3 gap-1">
             {(Object.keys(DERBY_ODDS) as (keyof typeof DERBY_ODDS)[]).map((k) => (
@@ -454,11 +456,11 @@ function Siasa({ s }: { s: GameState }) {
   return (
     <>
       <Card>
-        <p className="text-sm">🗳️ Voter: {s.voter ? "Niko kadi ✓" : "Not registered. Go to the IEBC desk at KICC."}</p>
-        <p className="mt-1 text-sm">🏛️ Office: {s.office ? OFFICE[s.office.id].title : "Mwananchi"}</p>
+        <p className="text-sm">Voter: {s.voter ? "Niko kadi ✓" : "Not registered. Go to the IEBC desk at KICC."}</p>
+        <p className="mt-1 text-sm">Office: {s.office ? OFFICE[s.office.id].title : "Mwananchi"}</p>
         {s.campaign && (
           <p className="mt-1 text-sm">
-            📣 Running for {OFFICE[s.campaign.office].title} · campaign {ksh(s.campaign.spent)} · win chance ~{Math.round(electionOdds(s) * 100)}% · results Saturday night. Rallies at KICC.
+            Running for {OFFICE[s.campaign.office].title} · campaign {ksh(s.campaign.spent)} · win chance ~{Math.round(electionOdds(s) * 100)}% · results Saturday night. Rallies at KICC.
           </p>
         )}
         {!s.campaign && <p className="mt-1 text-sm text-muted">Register to run at KICC. Each office needs more charm and campaign money than the last.</p>}
@@ -471,7 +473,7 @@ function Siasa({ s }: { s: GameState }) {
               return (
                 <Row
                   key={p.id}
-                  left={`${p.emoji} ${p.label}`}
+                  left={<IconLabel emoji={p.emoji}>{`${p.label}`}</IconLabel>}
                   sub={p.desc}
                   right={
                     <Btn variant={on ? "solid" : "ghost"} disabled={(!on && s.policies.length > officeIdx) || !!s.event} onClick={() => send({ type: "policy", id: p.id })}>
@@ -496,7 +498,7 @@ function Gist({ s }: { s: GameState }) {
       {known.map((n) => (
         <div key={n.id} className="rounded-xl border border-line bg-card p-3">
           <div className="text-sm font-semibold">
-            {n.emoji} @{n.name.toLowerCase().replace(/\s+/g, "")}
+            <IconLabel emoji={n.emoji}>@{n.name.toLowerCase().replace(/\s+/g, "")}</IconLabel>
           </div>
           <p className="text-sm">{n.line.replace(/"/g, "")}</p>
         </div>
@@ -504,9 +506,9 @@ function Gist({ s }: { s: GameState }) {
       {news.map((e) => (
         <div key={e.id} className="rounded-xl border border-line bg-card p-3">
           <div className="text-xs text-muted">
-            📰 Kanairo News · D{dayOf(e.time)} {clock(e.time)}
+            Kanairo News · D{dayOf(e.time)} {clock(e.time)}
           </div>
-          <p className="text-sm">{e.text}</p>
+          <p className="text-sm">{splitIcon(e.text).text}</p>
         </div>
       ))}
       {!known.length && !news.length && <Empty>Nothing yet. Make friends and the gist will flow.</Empty>}

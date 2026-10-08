@@ -6,9 +6,18 @@ import { canAfford, cityOf, estateOf, npcsHere, placeOf, quote, travelModes } fr
 import { useOnline } from "@/online/store";
 import { useGame } from "@/game/store";
 import type { GameState } from "@/game/types";
-import { Card, duration, ksh, Tabs } from "./ui";
+import { iconName } from "@/game/icons";
+import { Icon } from "./Icon";
+import { ICONS } from "./icons";
+import { Card, duration, IconLabel, ksh, Tabs } from "./ui";
 
 const NAIROBI = AREAS.filter((a) => !a.city);
+
+/** A Tabler icon drawn inside the map's SVG, centred on (x, y). */
+function MapGlyph({ name, x, y, size, color }: { name: string; x: number; y: number; size: number; color: string }) {
+  const Cmp = ICONS[name] ?? ICONS["circle-dot"];
+  return <Cmp x={x - size / 2} y={y - size / 2} width={size} height={size} stroke={1.8} color={color} style={{ pointerEvents: "none" }} />;
+}
 
 export default function CityMap({ s, onArrive }: { s: GameState; onArrive?: () => void }) {
   const send = useGame((st) => st.send);
@@ -30,9 +39,9 @@ export default function CityMap({ s, onArrive }: { s: GameState; onArrive?: () =
           setArea(c === "nairobi" ? (cityOf(here.area) === "nairobi" ? here.area : "jkia") : c);
           setDest(null);
         }}
-        items={[{ id: "nairobi", label: "🏙️ Nairobi" }, ...CITY_AREAS.map((a) => ({ id: a.id as string, label: `${a.emoji} ${a.name}${counts[a.id] ? ` · ${counts[a.id]}🟢` : ""}` }))]}
+        items={[{ id: "nairobi", label: <IconLabel emoji="🏙️">Nairobi</IconLabel> }, ...CITY_AREAS.map((a) => ({ id: a.id as string, label: <IconLabel emoji={a.emoji}>{`${a.name}${counts[a.id] ? ` · ${counts[a.id]} online` : ""}`}</IconLabel> }))]}
       />
-      {city === "nairobi" && <Card title="Kanairo" right={<span className="text-xs text-muted">Tap an area · 🟢 = players online</span>}>
+      {city === "nairobi" && <Card title="Kanairo" right={<span className="text-xs text-muted">Tap an area · green badge = players online</span>}>
         <svg viewBox="0 0 100 100" className="w-full select-none rounded-xl bg-[#ece2d0]" role="group" aria-label="Map of Nairobi">
           <g stroke="#d9cbb2" strokeWidth="1.4" fill="none" strokeLinecap="round">
             <path d="M50 47 L36 35 L33 13" />
@@ -51,9 +60,7 @@ export default function CityMap({ s, onArrive }: { s: GameState; onArrive?: () =
             return (
               <g key={a.id} onClick={() => { setArea(a.id); setDest(null); }} className="cursor-pointer" role="button" aria-label={a.name}>
                 <circle cx={a.x} cy={a.y} r={selected ? 4.4 : 3.6} fill={isHere ? "var(--kenya-green)" : selected ? "var(--sun)" : "var(--card)"} stroke="var(--foreground)" strokeWidth="0.5" />
-                <text x={a.x} y={a.y + 1.3} textAnchor="middle" fontSize="3.4">
-                  {isHere && s.location !== "home" ? s.player.avatar : a.emoji}
-                </text>
+                <MapGlyph name={isHere && s.location !== "home" ? "user" : iconName(a.emoji)} x={a.x} y={a.y} size={4} color={isHere ? "#fff" : "var(--foreground)"} />
                 <text x={a.x} y={a.y + 7} textAnchor="middle" fontSize="2.5" fontWeight={selected || isHere ? 700 : 500} fill="var(--foreground)">
                   {a.name}
                 </text>
@@ -71,14 +78,12 @@ export default function CityMap({ s, onArrive }: { s: GameState; onArrive?: () =
           {/* Home rides on its area's node so it never covers a label. */}
           <g onClick={() => { setArea(home.area); setDest("home"); }} className="cursor-pointer" role="button" aria-label="Home">
             <rect x={AREA[home.area].x + 1.6} y={AREA[home.area].y - 6.4} width="5" height="5" rx="1.4" fill={s.location === "home" ? "var(--kenya-green)" : "var(--kenya-red)"} stroke="var(--foreground)" strokeWidth="0.4" />
-            <text x={AREA[home.area].x + 4.1} y={AREA[home.area].y - 2.8} textAnchor="middle" fontSize="2.8">
-              {s.location === "home" ? s.player.avatar : "🏠"}
-            </text>
+            <MapGlyph name={s.location === "home" ? "user" : "home"} x={AREA[home.area].x + 4.1} y={AREA[home.area].y - 3.9} size={3.2} color="#fff" />
           </g>
         </svg>
       </Card>}
 
-      <Card title={`${area.emoji} ${area.name}`}>
+      <Card title={<IconLabel emoji={area.emoji}>{`${area.name}`}</IconLabel>}>
         <p className="-mt-2 mb-3 text-sm text-muted">{area.blurb}</p>
         <div className="grid gap-2">
           {spots.map((v) => {
@@ -86,7 +91,7 @@ export default function CityMap({ s, onArrive }: { s: GameState; onArrive?: () =
             const people = isHere ? npcsHere(s).length : 0;
             return (
               <button key={v.id} disabled={isHere} onClick={() => setDest(v.id)} className={`flex items-center gap-3 rounded-xl border p-2.5 text-left transition disabled:opacity-60 ${dest === v.id ? "border-foreground bg-sun/30" : "border-line bg-background/50 hover:border-muted"}`}>
-                <span className="text-2xl">{v.emoji}</span>
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-sun/25"><Icon emoji={v.emoji} size={22} /></span>
                 <span className="min-w-0 flex-1">
                   <span className="block font-semibold">
                     {v.name}
@@ -102,7 +107,7 @@ export default function CityMap({ s, onArrive }: { s: GameState; onArrive?: () =
 
       {target && quote(s, target.id, "walk").blocked && (
         <Card title={`Go to ${target.name}`}>
-          <p className="text-sm text-muted">✈️ {quote(s, target.id, "walk").blocked}. {cityOf(here.area) === "nairobi" ? "JKIA and the SGR terminus are in the JKIA area." : "The airport and the bus or train are in the city list above."}</p>
+          <p className="text-sm text-muted">{quote(s, target.id, "walk").blocked}. {cityOf(here.area) === "nairobi" ? "JKIA and the SGR terminus are in the JKIA area." : "The airport and the bus or train are in the city list above."}</p>
         </Card>
       )}
       {target && !quote(s, target.id, "walk").blocked && (
@@ -123,12 +128,12 @@ export default function CityMap({ s, onArrive }: { s: GameState; onArrive?: () =
                   className="rounded-xl border border-line bg-background/50 px-3 py-2 text-left transition enabled:hover:border-foreground disabled:opacity-40"
                 >
                   <div className="font-semibold">
-                    {q.local ? "🚶🏾 Walk over" : `${m.emoji} ${m.label}`}
+                    {q.local ? <IconLabel name="walk">Walk over</IconLabel> : <IconLabel emoji={m.emoji}>{m.label}</IconLabel>}
                   </div>
                   <div className="font-mono text-xs text-muted">
                     {duration(q.minutes)} · {q.fare ? ksh(q.fare) : "free"}
-                    {q.energy > 1 && ` · −${q.energy}⚡`}
-                    {q.rush && !q.local && m.id !== "walk" && m.id !== "boda" && " · 🚦"}
+                    {q.energy > 1 && ` · −${q.energy} energy`}
+                    {q.rush && !q.local && m.id !== "walk" && m.id !== "boda" && " · rush hour"}
                   </div>
                 </button>
               );

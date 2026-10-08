@@ -4,6 +4,7 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import { useGame } from "@/game/store";
 import { useOnline } from "@/online/store";
 import Account from "./Account";
+import { Icon } from "./Icon";
 import Creator from "./Creator";
 import Play from "./Play";
 
@@ -47,13 +48,10 @@ function TitleScreen({ onStart, onLogin }: { onStart?: () => void; onLogin?: () 
             Move to the city, find a hustle, ride matatus, survive KPLC blackouts, and try to make it from a Kayole bedsitter to Karen.
           </p>
         </div>
-        <div className="flex flex-wrap gap-2 text-2xl" aria-hidden>
-          <span>🚐</span>
-          <span>🏍️</span>
-          <span>🍖</span>
-          <span>🦒</span>
-          <span>⚡</span>
-          <span>📱</span>
+        <div className="flex flex-wrap gap-3 text-foreground/70" aria-hidden>
+          {["bus", "motorbike", "meat", "paw", "bolt", "device-mobile"].map((n) => (
+            <Icon key={n} name={n} size={28} />
+          ))}
         </div>
         <button
           onClick={onStart}
