@@ -1,5 +1,7 @@
 /** Layered avatar description, shared by the avatar renderer and the server's validation. */
 export interface Look {
+  /** Which base body: masculine or feminine frame. */
+  frame: string;
   body: string;
   skin: string;
   hair: string;
@@ -14,6 +16,7 @@ export interface Look {
 }
 
 export const LOOK_OPTIONS = {
+  frame: ["masc", "fem"],
   body: ["average", "slim", "curvy", "broad"],
   skin: ["#3b2219", "#5a3825", "#7a4a2e", "#9a6440", "#b98159", "#d9a77c"],
   hair: ["fade", "afro", "braids", "locs", "bun", "cornrows", "bald", "hijab", "cap"],
@@ -28,6 +31,7 @@ export const LOOK_OPTIONS = {
 } as const satisfies Record<keyof Look, readonly string[]>;
 
 export const LOOK_LABELS: Record<string, string> = {
+  masc: "Masculine", fem: "Feminine",
   average: "Average", slim: "Slim", curvy: "Curvy", broad: "Broad",
   fade: "Fade", afro: "Afro", braids: "Braids", locs: "Locs", bun: "Bun", cornrows: "Cornrows", bald: "Bald", hijab: "Hijab", cap: "Cap",
   tee: "Tee", hoodie: "Hoodie", shirt: "Shirt", kitenge: "Kitenge", jersey: "Harambee Stars jersey", blazer: "Blazer", dress: "Dress",
@@ -36,7 +40,7 @@ export const LOOK_LABELS: Record<string, string> = {
   none: "None", glasses: "Glasses", shades: "Shades", earrings: "Earrings", chain: "Chain", beads: "Maasai beads",
 };
 
-export const DEFAULT_LOOK: Look = { body: "average", skin: LOOK_OPTIONS.skin[2], hair: "fade", hairColor: LOOK_OPTIONS.hairColor[0], top: "tee", topColor: LOOK_OPTIONS.topColor[0], bottom: "jeans", bottomColor: LOOK_OPTIONS.bottomColor[0], shoes: "sneakers", extra: "none", bg: LOOK_OPTIONS.bg[0] };
+export const DEFAULT_LOOK: Look = { frame: "masc", body: "average", skin: LOOK_OPTIONS.skin[2], hair: "fade", hairColor: LOOK_OPTIONS.hairColor[0], top: "tee", topColor: LOOK_OPTIONS.topColor[0], bottom: "jeans", bottomColor: LOOK_OPTIONS.bottomColor[0], shoes: "sneakers", extra: "none", bg: LOOK_OPTIONS.bg[0] };
 
 /** Keeps only known values; anything else falls back to the default. */
 export function sanitizeLook(input: unknown): Look {
@@ -46,10 +50,12 @@ export function sanitizeLook(input: unknown): Look {
     const v = src[key];
     if (typeof v === "string" && (LOOK_OPTIONS[key] as readonly string[]).includes(v)) out[key] = v;
   }
+  // Looks saved before frames existed: guess from the outfit.
+  if (!src.frame && (out.body === "curvy" || out.top === "dress" || out.bottom === "skirt" || out.bottom === "maxi" || out.hair === "bun" || out.hair === "hijab")) out.frame = "fem";
   return out;
 }
 
 export function randomLook(rng: () => number = Math.random): Look {
   const pick = <T>(list: readonly T[]) => list[Math.floor(rng() * list.length)];
-  return { body: pick(LOOK_OPTIONS.body), skin: pick(LOOK_OPTIONS.skin), hair: pick(LOOK_OPTIONS.hair), hairColor: pick(LOOK_OPTIONS.hairColor), top: pick(LOOK_OPTIONS.top), topColor: pick(LOOK_OPTIONS.topColor), bottom: pick(LOOK_OPTIONS.bottom), bottomColor: pick(LOOK_OPTIONS.bottomColor), shoes: pick(LOOK_OPTIONS.shoes), extra: pick(LOOK_OPTIONS.extra), bg: pick(LOOK_OPTIONS.bg) };
+  return { frame: pick(LOOK_OPTIONS.frame), body: pick(LOOK_OPTIONS.body), skin: pick(LOOK_OPTIONS.skin), hair: pick(LOOK_OPTIONS.hair), hairColor: pick(LOOK_OPTIONS.hairColor), top: pick(LOOK_OPTIONS.top), topColor: pick(LOOK_OPTIONS.topColor), bottom: pick(LOOK_OPTIONS.bottom), bottomColor: pick(LOOK_OPTIONS.bottomColor), shoes: pick(LOOK_OPTIONS.shoes), extra: pick(LOOK_OPTIONS.extra), bg: pick(LOOK_OPTIONS.bg) };
 }

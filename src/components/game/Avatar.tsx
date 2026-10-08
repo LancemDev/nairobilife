@@ -1,7 +1,10 @@
 "use client";
 
 import { useId } from "react";
+import dynamic from "next/dynamic";
 import { DEFAULT_LOOK, LOOK_LABELS, LOOK_OPTIONS, randomLook, sanitizeLook, type Look } from "@/game/look";
+
+const AvatarStage = dynamic(() => import("@/world/AvatarStage"), { ssr: false });
 
 const SHADE = "rgba(0,0,0,0.18)";
 const LONG_SLEEVES = new Set(["hoodie", "shirt", "blazer", "kitenge"]);
@@ -295,7 +298,7 @@ export function AvatarBuilder({ look, onChange }: { look: Look; onChange: (l: Lo
       </div>
     </div>
   );
-  const choice = (k: "body" | "hair" | "top" | "bottom" | "shoes" | "extra", label: string) => (
+  const choice = (k: "frame" | "body" | "hair" | "top" | "bottom" | "shoes" | "extra", label: string) => (
     <div>
       <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted">{label}</div>
       <div className="flex flex-wrap gap-1.5">
@@ -311,12 +314,13 @@ export function AvatarBuilder({ look, onChange }: { look: Look; onChange: (l: Lo
   return (
     <div className="grid gap-4 sm:grid-cols-[auto_1fr]">
       <div className="flex flex-col items-center gap-2 sm:sticky sm:top-16 sm:self-start">
-        <Avatar look={look} size={120} variant="full" />
+        <AvatarStage look={look} className="h-72 w-48 rounded-3xl bg-gradient-to-b from-sky-100 to-amber-50 sm:h-96 sm:w-60" />
         <button onClick={() => onChange(randomLook())} className="rounded-full border border-line px-3 py-1 text-sm font-semibold hover:border-foreground">
           Random
         </button>
       </div>
       <div className="space-y-3">
+        {choice("frame", "Frame")}
         {choice("body", "Body")}
         {color("skin", "Skin")}
         {choice("hair", "Hair")}

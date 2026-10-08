@@ -37,9 +37,9 @@ function local(p: Prop, lx: number, lz: number) {
 function poseFor(p: Prop): { pose: Pose; at: { x: number; z: number; rot: number; y: number } } {
   switch (p.kind) {
     case "bed":
-      return { pose: "sleep", at: { ...local(p, 0, 0.85), rot: p.rot, y: 0.58 } };
+      return { pose: "sleep", at: { ...local(p, 0, 0.98), rot: p.rot, y: 0.6 } };
     case "hospitalBed":
-      return { pose: "sleep", at: { ...local(p, 0, 0.85), rot: p.rot, y: 0.68 } };
+      return { pose: "sleep", at: { ...local(p, 0, 0.98), rot: p.rot, y: 0.7 } };
     case "sofa":
       return { pose: "sit", at: { ...local(p, 0, 0.1), rot: p.rot, y: 0.5 } };
     case "chairs":
@@ -50,6 +50,8 @@ function poseFor(p: Prop): { pose: Pose; at: { x: number; z: number; rot: number
       return { pose: "sit", at: { ...local(p, 0.25, 0.05), rot: p.rot, y: 0.45 } };
     case "lounge":
       return { pose: "sit", at: { ...local(p, -0.8, 0.05), rot: p.rot, y: 0.5 } };
+    case "dancefloor":
+      return { pose: "dance", at: { ...local(p, 0, 0.2), rot: p.rot + Math.PI, y: 0 } };
     case "piano":
       return { pose: "sit", at: { ...local(p, 0, 1.0), rot: p.rot + Math.PI, y: 0.49 } };
     case "table":
@@ -305,6 +307,7 @@ function Scene({
           key={person.key}
           look={person.look}
           start={person.spot}
+          idle={person.key.length % 2 ? "talk" : "idle"}
           anchor={(obj) => anchor(person.key, { obj })}
           onClick={(e) => {
             e.stopPropagation();
