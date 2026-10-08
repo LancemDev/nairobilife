@@ -84,14 +84,18 @@ export interface WorldProps {
   showcase?: boolean;
 }
 
+// Places read as signboards; people get name bubbles with a pointer down to their head.
+const PLACE = "rounded-[5px] px-1.5 py-[3px] text-[9.5px] font-bold uppercase tracking-[0.08em] shadow-md";
+const PERSON = "rounded-full py-0.5 pl-1.5 pr-2 text-[11px] font-semibold shadow-lg after:absolute after:left-1/2 after:top-full after:-translate-x-1/2 after:border-x-[5px] after:border-t-[6px] after:border-x-transparent";
 const LABEL_STYLE = {
-  sign: "!rounded-lg !px-4 !py-1 font-display !text-lg font-extrabold uppercase tracking-wide bg-sun text-foreground",
-  prop: "bg-white/85 text-foreground",
-  lit: "bg-foreground text-background",
-  npc: "bg-white/95 text-foreground",
-  player: "bg-blue-600 text-white",
-  you: "bg-kgreen text-white",
+  sign: "rounded-lg px-4 py-1 font-display text-lg font-extrabold uppercase tracking-wide bg-sun text-foreground shadow",
+  prop: `${PLACE} bg-[#1f2937]/80 text-white`,
+  lit: `${PLACE} bg-sun text-foreground`,
+  npc: `${PERSON} bg-white text-foreground after:border-t-white`,
+  player: `${PERSON} bg-blue-600 text-white after:border-t-blue-600`,
+  you: `${PERSON} bg-kgreen text-white after:border-t-kgreen`,
 };
+const DOT: Partial<Record<keyof typeof LABEL_STYLE, string>> = { npc: "bg-amber-400", player: "bg-sky-300", you: "bg-lime-300" };
 
 export default function World(props: WorldProps) {
   const { s, others, selected } = props;
@@ -143,9 +147,10 @@ export default function World(props: WorldProps) {
             key={l.key}
             ref={(el) => anchor(l.key, l.pos ? { el, pos: l.pos } : { el })}
             onClick={l.tap}
-            className={`absolute left-0 top-0 whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold shadow will-change-transform ${l.tap ? "pointer-events-auto cursor-pointer" : ""} ${LABEL_STYLE[l.kind]}`}
+            className={`absolute left-0 top-0 flex items-center gap-1 whitespace-nowrap will-change-transform ${l.tap ? "pointer-events-auto cursor-pointer" : ""} ${LABEL_STYLE[l.kind]}`}
             style={{ transform: "translate(-9999px, 0)" }}
           >
+            {DOT[l.kind] && <span className={`h-1.5 w-1.5 rounded-full ${DOT[l.kind]}`} />}
             {l.text}
           </span>
         ))}
@@ -164,13 +169,14 @@ function Projector({ anchors }: { anchors: React.RefObject<Map<string, Anchor>> 
       if (!a.el) continue;
       if (a.obj) {
         a.obj.getWorldPosition(v);
-        v.y += 2.15;
+        v.y += 1.95;
       } else if (a.pos) v.set(...a.pos);
       else continue;
       v.project(camera);
       const x = ((v.x + 1) / 2) * size.width;
       const y = ((1 - v.y) / 2) * size.height;
-      a.el.style.transform = v.z > 1 ? "translate(-9999px, 0)" : `translate(${x}px, ${y}px) translate(-50%, -50%)`;
+      // People's bubbles sit above the head with the pointer touching it; place signs centre on their spot.
+      a.el.style.transform = v.z > 1 ? "translate(-9999px, 0)" : `translate(${x}px, ${y}px) translate(-50%, ${a.obj ? "calc(-100% - 6px)" : "-50%"})`;
     }
   });
   return null;

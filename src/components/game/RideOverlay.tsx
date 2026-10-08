@@ -79,10 +79,10 @@ export default function RideOverlay() {
         </div>
       </div>
       <div className="absolute right-3 top-1/3 flex flex-col gap-1 rounded-2xl bg-white/95 p-1 shadow-xl">
-        {(["chase", "side", "inside"] as const).map((c) => (
+        {(ride.kind === "walk" ? (["chase", "side"] as const) : (["chase", "side", "inside"] as const)).map((c) => (
           <button key={c} onClick={() => setCam(c)} className={`flex w-16 flex-col items-center gap-0.5 rounded-xl py-2 text-[11px] font-semibold capitalize ${cam === c ? "bg-foreground text-background" : "text-muted"}`}>
             <Icon name={c === "chase" ? "video" : c === "side" ? "eye" : "armchair"} size={18} />
-            {c}
+            {c === "inside" && ride.kind === "boda" ? "rider" : c === "inside" && ride.kind === "plane" ? "cabin" : c}
           </button>
         ))}
       </div>
