@@ -2,11 +2,13 @@
 
 import { MapControls } from "@react-three/drei";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { useLayoutEffect, useMemo, useRef } from "react";
+import { Suspense, useLayoutEffect, useMemo, useRef } from "react";
 import { Color, InstancedMesh, Object3D, Vector3, type Group } from "three";
 import type { Profile } from "@/online/api";
 import { buildCity, type City, type CityId, type Landmark, type LandmarkKind, type Road } from "./city";
 import { Character } from "./Character";
+import { LIVERIES } from "./liveries";
+import { VehicleModel, type VehicleName } from "./Vehicles";
 
 const tmp = new Object3D();
 const col = new Color();
@@ -42,8 +44,10 @@ export default function CityView(props: CityViewProps) {
       {city.landmarks.map((l) => (
         <LandmarkModel key={l.id} l={l} selected={props.selected === l.id} onClick={() => props.onSelect(l)} />
       ))}
-      <Traffic roads={city.roads.filter((r) => r.w > 2)} />
-      {city.runways.length > 0 && <Plane runway={city.runways[0]} />}
+      <Suspense fallback={null}>
+        <Traffic roads={city.roads.filter((r) => r.w > 2)} />
+        {city.runways.length > 0 && <Plane runway={city.runways[0]} />}
+      </Suspense>
       <PlayersOnMap placed={placed} onPlayer={props.onPlayer} />
       <Pins city={city} placed={placed} pins={props.pins} />
       <MapControls makeDefault target={[focus.x, 0, focus.z]} enableRotate={false} screenSpacePanning={false} minDistance={20} maxDistance={180} maxPolarAngle={1.05} />
@@ -335,7 +339,7 @@ function Traffic({ roads }: { roads: Road[] }) {
         speed: 0.03 + ((i * 7) % 5) * 0.008,
         dir: i % 2 ? 1 : -1,
         color: ["#f2b705", "#c8102e", "#f5f5f4", "#2563eb", "#7c3aed", "#0b7a3b"][i % 6],
-        matatu: i % 3 === 0,
+        model: (["matatu", "sedan", "nganya", "wagon", "boda", "taxi", "suv", "matatu", "van"] as VehicleName[])[i % 9],
       })),
     [roads],
   );
@@ -357,14 +361,10 @@ function Traffic({ roads }: { roads: Road[] }) {
     <group>
       {cars.map((c, i) => (
         <group key={i} ref={(el) => void (refs.current[i] = el)}>
-          <mesh castShadow>
-            <boxGeometry args={c.matatu ? [1.5, 0.6, 0.7] : [1, 0.4, 0.55]} />
-            <meshStandardMaterial color={c.color} />
-          </mesh>
-          <mesh position={[0, c.matatu ? 0.32 : 0.25, 0]}>
-            <boxGeometry args={c.matatu ? [1.4, 0.06, 0.66] : [0.55, 0.18, 0.5]} />
-            <meshStandardMaterial color="#1f2937" />
-          </mesh>
+          {/* Real models, nose turned to +X (the road direction), at map scale. */}
+          <group rotation={[0, -Math.PI / 2, 0]} position={[0, -0.23, 0]} scale={c.model === "boda" ? 0.32 : 0.24}>
+            <VehicleModel name={c.model} color={c.model === "sedan" || c.model === "suv" ? c.color : undefined} livery={c.model === "nganya" ? LIVERIES[i % LIVERIES.length] : null} />
+          </group>
         </group>
       ))}
     </group>
@@ -386,18 +386,9 @@ function Plane({ runway }: { runway: City["runways"][number] }) {
   });
   return (
     <group ref={g}>
-      <mesh castShadow rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[0.35, 0.3, 4, 10]} />
-        <meshStandardMaterial color="#f5f5f4" />
-      </mesh>
-      <mesh castShadow>
-        <boxGeometry args={[1, 0.08, 4.2]} />
-        <meshStandardMaterial color="#e5e7eb" />
-      </mesh>
-      <mesh position={[-1.7, 0.5, 0]} castShadow>
-        <boxGeometry args={[0.6, 0.9, 0.08]} />
-        <meshStandardMaterial color="#c8102e" />
-      </mesh>
+      <group rotation={[0, -Math.PI / 2, 0]} position={[0, -0.6, 0]} scale={0.14}>
+        <VehicleModel name="airliner" />
+      </group>
     </group>
   );
 }
