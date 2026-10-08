@@ -24,7 +24,7 @@ import {
   SHA_WEEKLY,
   VENUE,
 } from "@/game/data";
-import { canAfford, clock, dayOf, electionOdds, fulizaLimit, isWeekend, netWorth, placeOf, price } from "@/game/engine";
+import { canAfford, clock, dayOf, electionOdds, fulizaLimit, isWeekend, placeOf, price } from "@/game/engine";
 import { useGame } from "@/game/store";
 import type { GameState } from "@/game/types";
 import { splitIcon } from "@/game/icons";
@@ -38,26 +38,51 @@ import { useUi, type PhoneApp } from "./uiStore";
 import { Icon } from "./Icon";
 import { Btn, Card, Empty, IconLabel, ksh, Row, Tabs } from "./ui";
 
-const APPS: { id: PhoneApp; label: string; icon: string; bg: string }[] = [
-  { id: "messages", label: "Messages", icon: "message-circle", bg: "from-sky-400 to-blue-600" },
-  { id: "contacts", label: "Contacts", icon: "phone", bg: "from-emerald-400 to-green-600" },
-  { id: "watu", label: "Watu", icon: "users", bg: "from-cyan-400 to-teal-600" },
-  { id: "profile", label: "Profile", icon: "user", bg: "from-violet-400 to-purple-700" },
-  { id: "houses", label: "Houses", icon: "home", bg: "from-amber-300 to-yellow-600" },
-  { id: "mpesa", label: "M-Pesa", icon: "cash", bg: "from-lime-400 to-green-700" },
-  { id: "benki", label: "Benki", icon: "building-bank", bg: "from-indigo-400 to-indigo-700" },
-  { id: "chakula", label: "Chakula", icon: "moped", bg: "from-orange-400 to-red-500" },
-  { id: "kazi", label: "Kazi", icon: "briefcase", bg: "from-teal-400 to-emerald-700" },
-  { id: "mali", label: "Mali", icon: "crane", bg: "from-amber-400 to-orange-600" },
-  { id: "ndege", label: "Ndege", icon: "plane-departure", bg: "from-rose-500 to-red-700" },
-  { id: "siasa", label: "Siasa", icon: "building-monument", bg: "from-slate-500 to-slate-800" },
-  { id: "gist", label: "Mtaa Gist", icon: "news", bg: "from-pink-400 to-fuchsia-600" },
+/** App icons: a filled glyph on an iOS-style squircle. Dock apps sit in the glass bar at the bottom. */
+const APPS: { id: PhoneApp; label: string; icon: string; bg: string; fg?: string }[] = [
+  { id: "contacts", label: "Phone", icon: "phone-filled", bg: "bg-gradient-to-b from-[#5af27a] to-[#1fc33f]" },
+  { id: "messages", label: "Messages", icon: "message-circle-filled", bg: "bg-gradient-to-b from-[#5af27a] to-[#1fc33f]" },
+  { id: "mpesa", label: "M-PESA", icon: "cash-banknote-filled", bg: "bg-white", fg: "text-[#3bb54a]" },
+  { id: "watu", label: "Watu", icon: "users-group", bg: "bg-gradient-to-b from-[#6ac8ff] to-[#1f8bf0]" },
+  { id: "profile", label: "Profile", icon: "user-filled", bg: "bg-gradient-to-b from-[#a1a1aa] to-[#6b6b73]" },
+  { id: "houses", label: "Keja", icon: "home-filled", bg: "bg-gradient-to-b from-[#ffb340] to-[#ff8a00]" },
+  { id: "benki", label: "Benki", icon: "building-bank", bg: "bg-gradient-to-b from-[#3d4ed8] to-[#1e2a8a]" },
+  { id: "chakula", label: "Chakula", icon: "tools-kitchen-2", bg: "bg-gradient-to-b from-[#ff6a3d] to-[#e8361c]" },
+  { id: "kazi", label: "Kazi", icon: "briefcase-filled", bg: "bg-gradient-to-b from-[#3a3a3c] to-[#1c1c1e]" },
+  { id: "mali", label: "Mali", icon: "building-estate", bg: "bg-gradient-to-b from-[#34c7a0] to-[#0f8f6e]" },
+  { id: "ndege", label: "Aviator", icon: "rocket", bg: "bg-gradient-to-b from-[#ff375f] to-[#c4002b]" },
+  { id: "siasa", label: "Siasa", icon: "building-monument", bg: "bg-white", fg: "text-[#0b7a3b]" },
+  { id: "gist", label: "Mtaa Gist", icon: "news", bg: "bg-gradient-to-b from-[#ff4f8b] to-[#d6246a]" },
 ];
+const DOCK_APPS: PhoneApp[] = ["contacts", "messages", "mpesa", "watu"];
 
-const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const CITY_LABEL = { nairobi: "Nairobi", mombasa: "Mombasa", kisumu: "Kisumu" } as const;
 
-/** A phone you hold up over the game: notch, wallpaper, big clock, app grid. */
+/** Rough, believable weather: cool Nairobi mornings, hot humid coast, warm lake. */
+function weather(city: keyof typeof CITY_LABEL, t: number) {
+  const h = (t % 1440) / 60;
+  const [lo, hi] = city === "mombasa" ? [24, 31] : city === "kisumu" ? [18, 29] : [13, 25];
+  const temp = Math.round(lo + (hi - lo) * Math.max(0, Math.sin(((h - 6) / 14) * Math.PI)));
+  const day = Math.floor(t / 1440);
+  const cloudy = (day * 7 + (city === "nairobi" ? 1 : 3)) % 3 === 0;
+  const night = h < 6 || h >= 19;
+  return { temp, lo, hi, text: cloudy ? (h > 14 && h < 18 && city !== "mombasa" ? "Afternoon showers" : "Mostly cloudy") : night ? "Clear" : "Sunny", icon: cloudy ? "cloud-filled" : night ? "moon" : "sun-filled", night };
+}
+
+function AppIcon({ a, size = 60, badge = 0, label = true, onOpen }: { a: (typeof APPS)[number]; size?: number; badge?: number; label?: boolean; onOpen: () => void }) {
+  return (
+    <button onClick={onOpen} className="flex flex-col items-center gap-1 transition active:scale-90 active:brightness-75">
+      <span className={`relative grid place-items-center rounded-[23%] shadow-[0_1px_3px_rgba(0,0,0,.25)] ${a.bg}`} style={{ width: size, height: size }}>
+        <Icon name={a.icon} size={Math.round(size * 0.55)} stroke={1.8} className={a.fg ?? "text-white"} />
+        {badge > 0 && <span className="absolute -right-1.5 -top-1.5 grid h-[22px] min-w-[22px] place-items-center rounded-full bg-[#ff3b30] px-1.5 text-[13px] font-semibold text-white">{badge}</span>}
+      </span>
+      {label && <span className="max-w-[72px] truncate text-[11.5px] font-medium tracking-tight text-white [text-shadow:0_1px_2px_rgba(0,0,0,.35)]">{a.label}</span>}
+    </button>
+  );
+}
+
+/** A phone you hold up over the game, laid out like a real iPhone home screen. */
 export default function PhoneOverlay({ s }: { s: GameState }) {
   const { app, chatWith, openApp, open, setChat } = useUi();
   const unread = useOnline((st) => st.unread);
@@ -65,83 +90,140 @@ export default function PhoneOverlay({ s }: { s: GameState }) {
   const day = dayOf(s.time);
   // In-game calendar starts on Monday 5 October 2026 (Day 1).
   const date = new Date(2026, 9, 4 + day);
-  const city = AREA[placeOf(s).area]?.city ?? "nairobi";
+  const city = (AREA[placeOf(s).area]?.city ?? "nairobi") as keyof typeof CITY_LABEL;
+  const w = weather(city, s.time);
   const close = () => open(null);
+  const next = s.flight
+    ? { title: `${s.flight.code} → ${s.flight.to[0].toUpperCase()}${s.flight.to.slice(1)}`, when: clock(s.flight.dep), tone: "bg-[#ff9500]" }
+    : { title: "Rent due", when: s.rentPaidThroughDay > day ? `in ${s.rentPaidThroughDay - day + 1} days` : "today", tone: "bg-[#ff3b30]" };
+  const homeGrid = APPS.filter((a) => !DOCK_APPS.includes(a.id));
+  const dark = !current;
   return (
     <div className="absolute inset-0 z-30 grid place-items-center bg-black/45 p-3 backdrop-blur-[2px]" onClick={close}>
-      <div className="relative flex h-[min(820px,calc(100dvh-24px))] w-[min(390px,calc(100vw-24px))] flex-col" onClick={(e) => e.stopPropagation()}>
-        <button onClick={close} className="absolute -top-1 right-0 z-10 flex -translate-y-full items-center gap-1 rounded-full bg-white px-3 py-1.5 text-sm font-semibold shadow-lg">
-          <Icon name="x" size={16} /> Close
+      <div className="relative flex h-[min(844px,calc(100dvh-72px))] w-[min(390px,calc(100vw-24px),calc((100dvh-72px)*0.47))] flex-col" onClick={(e) => e.stopPropagation()}>
+        <button onClick={close} className="absolute -top-1 right-0 z-10 flex -translate-y-full items-center gap-1 rounded-full bg-white/90 px-3 py-1.5 text-sm font-semibold shadow-lg">
+          <Icon name="x" size={16} /> Put phone away
         </button>
-        <div className="mt-8 flex flex-1 flex-col overflow-hidden rounded-[3rem] border-[10px] border-[#111] bg-[#111] shadow-2xl">
-          <div className="relative flex flex-1 flex-col overflow-hidden rounded-[2.3rem] bg-gradient-to-b from-[#0b3d2e] via-[#1f6f50] to-[#f2a541]">
-            {/* status bar with the dynamic island */}
-            <div className={`relative flex items-center justify-between px-6 pb-1 pt-3 text-xs font-semibold ${current ? "bg-white text-foreground" : "text-white"}`}>
-              <span>{clock(s.time)}</span>
-              <span className="absolute left-1/2 top-2 h-6 w-24 -translate-x-1/2 rounded-full bg-black" />
-              <span className="flex items-center gap-1">
-                <Icon name="wifi" size={13} /> 4G
-                <span className="ml-1 h-2.5 w-5 rounded-sm border border-current p-px">
-                  <span className="block h-full w-3/4 rounded-[1px] bg-current" />
-                </span>
-              </span>
-            </div>
-
-            {!current ? (
-              <div className="flex flex-1 flex-col overflow-y-auto px-5 pb-6 text-white">
-                <div className="mt-6">
-                  <div className="font-display text-7xl font-extrabold leading-none tracking-tight">{clock(s.time)}</div>
-                  <div className="mt-1 text-sm font-medium opacity-90">
-                    {DAYS[(day - 1) % 7]} {date.getDate()} {MONTHS[date.getMonth()]} · {city === "nairobi" ? "Nairobi" : city === "mombasa" ? "Mombasa" : "Kisumu"}
-                  </div>
-                  <div className="mt-1 font-mono text-xs opacity-75">Net worth {ksh(netWorth(s))}</div>
-                </div>
-                <div className="mt-8 grid grid-cols-4 gap-x-3 gap-y-5">
-                  {APPS.map((a) => (
-                    <button key={a.id} onClick={() => openApp(a.id)} className="flex flex-col items-center gap-1.5 transition active:scale-90">
-                      <span className={`relative grid h-[58px] w-[58px] place-items-center rounded-[18px] bg-gradient-to-br shadow-lg ${a.bg}`}>
-                        <Icon name={a.icon} size={28} stroke={2} className="text-white drop-shadow" />
-                        {a.id === "messages" && unread > 0 && <span className="absolute -right-1.5 -top-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-kred px-1 text-xs font-bold text-white shadow">{unread}</span>}
-                      </span>
-                      <span className="text-[11px] font-medium drop-shadow">{a.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="flex flex-1 flex-col overflow-hidden bg-background">
-                <div className="flex items-center gap-2 border-b border-line bg-white px-3 py-2">
-                  <button
-                    onClick={() => (app === "messages" && chatWith ? setChat(null) : openApp(null))}
-                    aria-label="Back"
-                    className="grid h-8 w-8 place-items-center rounded-full hover:bg-black/5"
-                  >
-                    <Icon name="chevron-left" size={22} />
-                  </button>
-                  <span className={`grid h-7 w-7 place-items-center rounded-lg bg-gradient-to-br ${current.bg}`}>
-                    <Icon name={current.icon} size={16} className="text-white" />
+        {/* titanium frame with side buttons */}
+        <div className="relative mt-10 flex flex-1 flex-col rounded-[3.4rem] bg-gradient-to-b from-[#5b5b60] via-[#2c2c30] to-[#4a4a50] p-[3px] shadow-[0_30px_80px_rgba(0,0,0,.55)]">
+          <span className="absolute -left-[3px] top-28 h-8 w-[3px] rounded-l bg-[#3a3a3e]" />
+          <span className="absolute -left-[3px] top-44 h-14 w-[3px] rounded-l bg-[#3a3a3e]" />
+          <span className="absolute -left-[3px] top-[15.5rem] h-14 w-[3px] rounded-l bg-[#3a3a3e]" />
+          <span className="absolute -right-[3px] top-48 h-20 w-[3px] rounded-r bg-[#3a3a3e]" />
+          <div className="flex flex-1 flex-col overflow-hidden rounded-[3.2rem] bg-black p-[9px]">
+            <div
+              className="relative flex flex-1 flex-col overflow-hidden rounded-[2.6rem] font-[system-ui,-apple-system,'SF_Pro_Text',sans-serif]"
+              style={
+                current
+                  ? { background: "#f2f2f7" }
+                  : {
+                      background: w.night
+                        ? "radial-gradient(120% 70% at 20% 0%, #3b2a8f 0%, transparent 60%), radial-gradient(90% 60% at 100% 60%, #0f5c63 0%, transparent 60%), radial-gradient(100% 70% at 0% 100%, #6b1d5c 0%, transparent 60%), #0b0d1f"
+                        : "radial-gradient(120% 70% at 15% 0%, #ff9f6b 0%, transparent 55%), radial-gradient(90% 60% at 100% 45%, #3aa17e 0%, transparent 60%), radial-gradient(110% 70% at 0% 100%, #1d4f8f 0%, transparent 65%), #0d3b4a",
+                    }
+              }
+            >
+              {/* status bar + dynamic island */}
+              <div className={`relative z-10 flex h-[54px] shrink-0 items-center justify-between px-8 pt-1 text-[15px] font-semibold ${dark ? "text-white" : "text-black"}`}>
+                <span className="w-16 text-center tracking-tight">{clock(s.time)}</span>
+                <span className="absolute left-1/2 top-[11px] h-[34px] w-[122px] -translate-x-1/2 rounded-full bg-black" />
+                <span className="flex w-16 items-center justify-end gap-1.5">
+                  <span className="flex items-end gap-[1.5px]">
+                    {[4, 6, 8, 10].map((h, i) => (
+                      <span key={h} className={`w-[3px] rounded-[1px] ${i < 3 ? "bg-current" : "bg-current/35"}`} style={{ height: h }} />
+                    ))}
                   </span>
-                  <span className="font-display text-lg font-bold">{current.label}</span>
-                </div>
-                <div className="flex-1 space-y-3 overflow-y-auto p-3">
-                  {app === "messages" && (chatWith ? <ChatView username={chatWith} /> : <UjumbeApp />)}
-                  {app === "contacts" && <People s={s} />}
-                  {app === "watu" && <WatuApp />}
-                  {app === "profile" && <Me s={s} />}
-                  {app === "houses" && <HomePanel s={s} />}
-                  {app === "mpesa" && <MPesa s={s} />}
-                  {app === "benki" && <Benki s={s} />}
-                  {app === "chakula" && <Chakula s={s} />}
-                  {app === "kazi" && <Kazi s={s} />}
-                  {app === "mali" && <Mali s={s} />}
-                  {app === "ndege" && <Ndege s={s} />}
-                  {app === "siasa" && <Siasa s={s} />}
-                  {app === "gist" && <Gist s={s} />}
-                </div>
+                  <Icon name="wifi" size={15} stroke={2.5} />
+                  <span className="relative flex h-[12px] w-[24px] items-center rounded-[4px] border border-current/40 p-[1.5px]">
+                    <span className="h-full w-[70%] rounded-[2px] bg-current" />
+                    <span className="absolute -right-[3px] h-[4px] w-[1.5px] rounded-r bg-current/40" />
+                  </span>
+                </span>
               </div>
-            )}
-            {/* home indicator */}
-            <button onClick={() => openApp(null)} aria-label="Home screen" className={`mx-auto mb-2 mt-1 h-1.5 w-32 rounded-full ${current ? "bg-foreground/80" : "bg-white/90"}`} />
+
+              {!current ? (
+                <div className="flex min-h-0 flex-1 flex-col px-[22px] pb-3">
+                  {/* widgets */}
+                  <div className="mt-2 grid grid-cols-2 gap-[22px]">
+                    <div className={`aspect-square rounded-[22px] p-3 text-white shadow-lg ${w.night ? "bg-gradient-to-b from-[#1c2541] to-[#3a506b]" : "bg-gradient-to-b from-[#2f7fd8] to-[#62b0f0]"}`}>
+                      <div className="flex items-center gap-1 text-[13px] font-semibold">
+                        {CITY_LABEL[city]} <Icon name="map-pin-filled" size={10} />
+                      </div>
+                      <div className="text-[42px] font-light leading-none">{w.temp}°</div>
+                      <div className="mt-auto pt-3">
+                        <Icon name={w.icon} size={16} className="text-yellow-200" />
+                        <div className="text-[12px] font-semibold leading-tight">{w.text}</div>
+                        <div className="text-[12px] font-medium opacity-80">
+                          H:{w.hi}° L:{w.lo}°
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex aspect-square flex-col rounded-[22px] bg-white p-3 text-black shadow-lg">
+                      <div className="text-[11px] font-bold uppercase text-[#ff3b30]">{DAYS[(day - 1) % 7]}</div>
+                      <div className="text-[38px] font-light leading-none">{date.getDate()}</div>
+                      <div className="mt-auto flex gap-1.5">
+                        <span className={`w-1 rounded-full ${next.tone}`} />
+                        <div className="min-w-0">
+                          <div className="truncate text-[12px] font-semibold">{next.title}</div>
+                          <div className="text-[11px] text-black/50">{next.when}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-1 grid grid-cols-2 gap-[22px] text-center text-[11.5px] font-medium text-white [text-shadow:0_1px_2px_rgba(0,0,0,.35)]">
+                    <span>Weather</span>
+                    <span>Calendar</span>
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-4 justify-items-center gap-y-4">
+                    {homeGrid.map((a) => (
+                      <AppIcon key={a.id} a={a} onOpen={() => openApp(a.id)} />
+                    ))}
+                  </div>
+
+                  <div className="mt-auto flex justify-center pb-3 pt-4">
+                    <span className="flex items-center gap-1 rounded-full bg-white/25 px-3 py-1 text-[12px] font-semibold text-white backdrop-blur-md">
+                      <Icon name="search" size={12} stroke={3} /> Search
+                    </span>
+                  </div>
+                  {/* dock */}
+                  <div className="flex justify-around rounded-[32px] bg-white/25 px-3 py-[14px] backdrop-blur-xl">
+                    {DOCK_APPS.map((id) => {
+                      const a = APPS.find((x) => x.id === id)!;
+                      return <AppIcon key={id} a={a} label={false} badge={id === "messages" ? unread : 0} onOpen={() => openApp(id)} />;
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex min-h-0 flex-1 flex-col">
+                  {/* iOS navigation bar: back button, then a large title */}
+                  <div className="shrink-0 bg-[#f2f2f7]/95 px-4 pb-2 backdrop-blur">
+                    <button onClick={() => (app === "messages" && chatWith ? setChat(null) : openApp(null))} className="-ml-1.5 flex items-center text-[17px] text-[#007aff]">
+                      <Icon name="chevron-left" size={26} stroke={2.4} />
+                      {app === "messages" && chatWith ? "Messages" : "Home"}
+                    </button>
+                    {!(app === "messages" && chatWith) && <h1 className="mt-1 text-[32px] font-bold leading-tight tracking-tight text-black">{current.label}</h1>}
+                  </div>
+                  <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3 pb-3 text-black">
+                    {app === "messages" && (chatWith ? <ChatView username={chatWith} /> : <UjumbeApp />)}
+                    {app === "contacts" && <People s={s} />}
+                    {app === "watu" && <WatuApp />}
+                    {app === "profile" && <Me s={s} />}
+                    {app === "houses" && <HomePanel s={s} />}
+                    {app === "mpesa" && <MPesa s={s} />}
+                    {app === "benki" && <Benki s={s} />}
+                    {app === "chakula" && <Chakula s={s} />}
+                    {app === "kazi" && <Kazi s={s} />}
+                    {app === "mali" && <Mali s={s} />}
+                    {app === "ndege" && <Ndege s={s} />}
+                    {app === "siasa" && <Siasa s={s} />}
+                    {app === "gist" && <Gist s={s} />}
+                  </div>
+                </div>
+              )}
+              {/* home indicator: swipe up (tap) to go home */}
+              <button onClick={() => openApp(null)} aria-label="Home screen" className={`absolute bottom-2 left-1/2 h-[5px] w-[134px] -translate-x-1/2 rounded-full ${dark ? "bg-white" : "bg-black"}`} />
+            </div>
           </div>
         </div>
       </div>
