@@ -11,6 +11,8 @@ export interface Ride {
   from: string;
   to: string;
   minutes: number;
+  /** Areas at each end: nganya routes get a nganya. */
+  areas?: [string, string];
   /** What to dispatch when the ride ends (not when it's cancelled). */
   finish: import("@/game/engine").Command;
 }

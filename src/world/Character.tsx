@@ -368,7 +368,9 @@ function Model({ look, pose, busy, walking, idle }: { look: Look; pose: Pose; bu
       pose === "sit" ? "sit" : pose === "dance" ? "dance" : pose === "drive" ? "drive" : pose === "use" || (busy && pose === "stand") ? "use" : pose === "walk" || walking.current ? "walk" : pose === "sleep" ? "idle" : idle;
     if (want !== current.current && actions[want]) {
       const next = actions[want];
-      next.reset().fadeIn(0.25).play();
+      // First clip starts at full weight so nobody is ever caught in the T-pose.
+      if (current.current) next.reset().fadeIn(0.25).play();
+      else next.reset().play();
       if (current.current) actions[current.current]?.fadeOut(0.25);
       current.current = want;
     }

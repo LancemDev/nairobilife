@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import { useGame } from "@/game/store";
 import type { RideCam, RideKind } from "@/world/RideScene";
+import { liveryFor } from "@/world/liveries";
 import { Icon } from "./Icon";
 import { useUi } from "./uiStore";
 
@@ -31,6 +32,8 @@ export default function RideOverlay() {
   const [elapsed, setElapsed] = useState(0);
   const total = Math.max(6, Math.min(16, ride.minutes / 5));
   const done = useRef(false);
+  // On a nganya route you get a nganya; elsewhere it's a plain 14-seater.
+  const [livery] = useState(() => (ride.kind === "matatu" && ride.areas ? (liveryFor(ride.areas[1], ride.minutes) ?? liveryFor(ride.areas[0], ride.minutes)) : null));
 
   const finish = () => {
     if (done.current) return;
@@ -39,11 +42,14 @@ export default function RideOverlay() {
     startRide(null);
   };
 
+  // The trip clock starts once the scene is on screen, not while it loads.
+  const [ready, setReady] = useState(false);
   useEffect(() => {
+    if (!ready) return;
     const start = performance.now();
-    const id = setInterval(() => setElapsed((performance.now() - start) / 1000), 200);
+    const id = setInterval(() => setElapsed(Math.min(total, (performance.now() - start) / 1000)), 200);
     return () => clearInterval(id);
-  }, []);
+  }, [ready, total]);
   useEffect(() => {
     if (elapsed >= total) queueMicrotask(finish);
   });
@@ -52,11 +58,11 @@ export default function RideOverlay() {
   const line = LINES[ride.kind][Math.floor(elapsed / 4) % LINES[ride.kind].length];
   return (
     <div className="absolute inset-0 z-40 bg-[#cfe3f0]">
-      <RideScene kind={ride.kind} cam={cam} look={look} />
+      <RideScene kind={ride.kind} cam={cam} look={look} livery={livery} onReady={() => setReady(true)} />
       <div className="absolute left-3 top-16 w-[min(340px,calc(100vw-24px))] rounded-3xl bg-foreground/85 p-4 text-white shadow-2xl backdrop-blur sm:top-3">
         <div className="flex items-center gap-2 text-sm font-semibold">
           <Icon name={KIND_ICON[ride.kind]} size={18} />
-          <span className="truncate">{ride.title}</span>
+          <span className="truncate">{livery ? `${ride.title} · "${livery.name}"` : ride.title}</span>
         </div>
         <div className="mt-0.5 truncate text-xs opacity-80">
           {ride.from} → {ride.to}
@@ -66,7 +72,7 @@ export default function RideOverlay() {
         </div>
         <div className="mt-1 flex items-center gap-2 text-xs opacity-80">
           <span>0:{String(left).padStart(2, "0")} to arrival</span>
-          <span className="rounded-full bg-kgreen px-2 py-0.5 font-semibold text-white">Moving</span>
+          <span className={`rounded-full px-2 py-0.5 font-semibold text-white ${ready ? "bg-kgreen" : "bg-white/25"}`}>{ready ? "Moving" : "Boarding…"}</span>
         </div>
         <p className="mt-2 text-sm">{line}</p>
         <div className="mt-3 flex gap-2">

@@ -1,10 +1,12 @@
 "use client";
 
 import { Canvas, useFrame } from "@react-three/fiber";
-import { useLayoutEffect, useMemo, useRef } from "react";
+import { Suspense, useLayoutEffect, useMemo, useRef } from "react";
 import { Color, InstancedMesh, Object3D, type Group } from "three";
-import type { Look } from "@/game/look";
+import { randomLook, type Look } from "@/game/look";
 import { Character } from "./Character";
+import { LIVERIES, type Livery } from "./liveries";
+import { VehicleModel, type VehicleName } from "./Vehicles";
 
 export type RideKind = "matatu" | "boda" | "cab" | "car" | "walk" | "plane" | "train";
 export type RideCam = "chase" | "side" | "inside";
@@ -21,9 +23,29 @@ function rng(seed: number) {
 const SHOP = ["#f1e3c6", "#e9d8c4", "#c9d7e4", "#e8c9a8", "#d9e3c7", "#f2d0d0", "#cfc6e6", "#e6e2d3"];
 const AWNING = ["#c8102e", "#0b7a3b", "#f2b705", "#2563eb", "#ec4899", "#f97316"];
 const CARS = ["#f5f5f4", "#1f2937", "#9ca3af", "#c8102e", "#2563eb", "#f2b705", "#14532d"];
+const TRAFFIC_CARS: VehicleName[] = ["sedan", "suv", "wagon", "taxi", "suv-luxury", "truck", "van", "police", "sedan", "wagon"];
+
+/**
+ * Seats measured off the models: [x, z, cushion height]. Kenya drives on the left, so the driver sits on the right
+ * and you get the front passenger seat in the 14-seater ("shotgun") and the front-left window in the nganya.
+ */
+const MATATU_SEATS = {
+  driver: [0.48, -0.82, 0.73] as const,
+  you: [-0.48, -0.82, 0.73] as const,
+  rows: [[-0.48, 0.36], [0.48, 0.36], [-0.45, 1.64], [0, 1.64], [0.45, 1.64]] as [number, number][],
+  y: 0.73,
+};
+const NGANYA_ROWS = Array.from({ length: 8 }, (_, r) => -2.4 + r * 0.82);
+const NGANYA_X = [-0.95, -0.5, 0.5, 0.95];
+const NGANYA_SEATS = {
+  driver: [0.78, -3.25, 1.0] as const,
+  you: [-0.95, -1.58, 1.0] as const,
+  rows: NGANYA_ROWS.flatMap((z) => NGANYA_X.map((x) => [x, z] as [number, number])).filter(([x, z]) => !(x === -0.95 && Math.abs(z + 1.58) < 0.01)),
+  y: 1.0,
+};
 
 /** A short 3D trip: the street scrolls past while your vehicle holds the middle of the frame. */
-export default function RideScene({ kind, cam, look, carColor }: { kind: RideKind; cam: RideCam; look?: Partial<Look> | null; carColor?: string }) {
+export default function RideScene({ kind, cam, look, carColor, livery, onReady }: { kind: RideKind; cam: RideCam; look?: Partial<Look> | null; carColor?: string; livery?: Livery | null; onReady?: () => void }) {
   const air = kind === "plane";
   const savannah = kind === "train";
   return (
@@ -32,11 +54,23 @@ export default function RideScene({ kind, cam, look, carColor }: { kind: RideKin
       <fog attach="fog" args={[air ? "#cfe6f5" : "#d7e6ef", 40, 190]} />
       <hemisphereLight args={["#ffffff", "#8a9a6a", 1]} />
       <directionalLight position={[30, 50, 20]} intensity={1.6} castShadow shadow-mapSize={[1024, 1024]} shadow-camera-left={-40} shadow-camera-right={40} shadow-camera-top={40} shadow-camera-bottom={-40} />
-      <Rig kind={kind} cam={cam} />
-      {air ? <Sky /> : savannah ? <Savannah /> : <Street walk={kind === "walk"} />}
-      <Player kind={kind} look={look} carColor={carColor} />
+      <Suspense fallback={null}>
+        <Rig kind={kind} cam={cam} big={!!livery} />
+        {air ? <Sky /> : savannah ? <Savannah /> : <Street walk={kind === "walk"} />}
+        <Player kind={kind} look={look} carColor={carColor} livery={livery ?? null} pov={cam === "inside"} />
+        <Ready onReady={onReady} />
+      </Suspense>
     </Canvas>
   );
+}
+
+/** Mounts only once everything above it has loaded; waits two frames so the first image is on screen. */
+function Ready({ onReady }: { onReady?: () => void }) {
+  const frames = useRef(0);
+  useFrame(() => {
+    if (++frames.current === 2) onReady?.();
+  });
+  return null;
 }
 
 /** Forward speed in world units per second, by vehicle. */
@@ -48,28 +82,45 @@ const scroll = { z: 0 };
 /** Which lane (x) your vehicle drives in, so cameras follow you rather than the road's centre. */
 export const laneOf = (kind: RideKind) => (kind === "walk" ? 10.5 : kind === "train" || kind === "plane" ? 0 : 4.5);
 
-function Rig({ kind, cam }: { kind: RideKind; cam: RideCam }) {
+/** Where your eyes are when you look from inside: your actual seat in each vehicle. */
+function insideEye(kind: RideKind, big: boolean): { at: [number, number, number]; look: [number, number, number] } {
+  if (kind === "matatu") {
+    const s = big ? NGANYA_SEATS.you : MATATU_SEATS.you;
+    return { at: [s[0] + (big ? 0.25 : 0), s[2] + (big ? 0.95 : 0.8), s[1] + 0.05], look: [s[0] * 0.3, s[2] + 0.45, -30] };
+  }
+  if (kind === "boda") return { at: [0, 2.05, 0.75], look: [0, 1.3, -20] };
+  if (kind === "plane") return { at: [-1.25, 3.3, 1], look: [-30, 1.2, 6] };
+  if (kind === "car") return { at: [0.38, 1.22, 0.1], look: [0.38, 1.0, -30] };
+  return { at: [-0.4, 1.18, 0.65], look: [-0.2, 1.0, -30] };
+}
+
+function Rig({ kind, cam, big }: { kind: RideKind; cam: RideCam; big: boolean }) {
   const lane = laneOf(kind);
   useFrame((state, dt) => {
     const camera = state.camera;
     scroll.z += SPEED[kind] * dt;
     const t = state.clock.elapsedTime;
+    const k = Math.min(1, dt * 3);
+    if (cam === "inside" && kind !== "walk") {
+      // Bolted to the seat (plus road judder), looking out of the windscreen or window.
+      const e = insideEye(kind, big);
+      const judder = kind === "plane" ? Math.sin(t * 0.8) * 0.3 : Math.sin(t * 13) * 0.01;
+      camera.position.set(lane + e.at[0], e.at[1] + judder, e.at[2]);
+      camera.lookAt(lane + e.look[0], e.look[1], e.look[2]);
+      return;
+    }
+    const plane = kind === "plane";
+    // Side view from the median side, so shopfronts never get between you and the camera.
     const want =
-      cam === "inside"
-        ? kind === "walk"
-          ? [0.2, 1.6, -0.3]
-          : kind === "plane"
-            ? [0, 1.2, -2]
-            : [0.35, kind === "boda" ? 1.7 : 1.35, -0.4]
-        : cam === "side"
-          ? [kind === "plane" ? 14 : 7, kind === "plane" ? 2 : 2.2, 0]
-          : kind === "plane"
-            ? [0, 4, 14]
-            : [0, kind === "walk" ? 2.4 : 3.6, kind === "walk" ? 5 : 8.5];
-    camera.position.x += (lane + want[0] + (cam === "chase" ? Math.sin(t * 0.4) * 0.3 : 0) - camera.position.x) * Math.min(1, dt * 3);
-    camera.position.y += (want[1] - camera.position.y) * Math.min(1, dt * 3);
-    camera.position.z += (want[2] - camera.position.z) * Math.min(1, dt * 3);
-    camera.lookAt(lane, cam === "inside" ? 1.2 : 1, cam === "side" ? 0 : -20);
+      cam === "side"
+        ? [plane ? 48 : kind === "walk" ? -6 : big ? -7.5 : -5.2, plane ? 6 : big ? 2.6 : 1.8, plane ? 2 : big ? 1.5 : 0]
+        : plane
+          ? [0, 10, 42]
+          : [0, kind === "walk" ? 2.4 : big ? 5 : 3.6, kind === "walk" ? 5 : big ? 13 : 8.5];
+    camera.position.x += (lane + want[0] + (cam === "chase" ? Math.sin(t * 0.4) * 0.3 : 0) - camera.position.x) * k;
+    camera.position.y += (want[1] - camera.position.y) * k;
+    camera.position.z += (want[2] - camera.position.z) * k;
+    camera.lookAt(lane, plane ? 3 : 1, cam === "side" ? 0 : -20);
   });
   return null;
 }
@@ -91,7 +142,9 @@ function Street({ walk }: { walk: boolean }) {
     const r = rng(11);
     return Array.from({ length: 26 }, (_, i) => {
       const lane = [-7.5, -4.5, 4.5, 7.5][i % 4];
-      return { lane, z: -r() * SEG, speed: lane < 0 ? -(8 + r() * 6) : 6 + r() * 8, color: CARS[Math.floor(r() * CARS.length)], matatu: r() < 0.3 };
+      const roll = r();
+      const model: VehicleName = roll < 0.16 ? "matatu" : roll < 0.28 ? "nganya" : roll < 0.36 ? "boda" : TRAFFIC_CARS[Math.floor(r() * TRAFFIC_CARS.length)];
+      return { lane, z: -r() * SEG, speed: lane < 0 ? -(8 + r() * 6) : 6 + r() * 8, color: CARS[Math.floor(r() * CARS.length)], model, livery: model === "nganya" ? LIVERIES[i % LIVERIES.length] : null, rider: randomLook(r) };
     });
   }, []);
   const group = useRef<Group>(null);
@@ -191,7 +244,10 @@ function Street({ walk }: { walk: boolean }) {
       {!walk &&
         traffic.map((c, i) => (
           <group key={i} ref={(el) => void (cars.current[i] = el)}>
-            <Vehicle kind={c.matatu ? "matatu" : "car"} color={c.color} />
+            <Suspense fallback={null}>
+              <VehicleModel name={c.model} color={c.model === "matatu" || c.model === "boda" || c.model === "nganya" ? undefined : c.color} livery={c.livery} />
+              {c.model === "boda" && <Character look={c.rider} start={[0, 0.1]} pose="drive" poseAt={{ x: 0, z: 0.1, rot: 0, y: 0.32 }} />}
+            </Suspense>
           </group>
         ))}
     </group>
@@ -333,33 +389,136 @@ function Vehicle({ kind, color }: { kind: "matatu" | "car" | "cab" | "boda" | "p
   );
 }
 
-function Player({ kind, look, carColor }: { kind: RideKind; look?: Partial<Look> | null; carColor?: string }) {
+function Player({ kind, look, carColor, livery, pov }: { kind: RideKind; look?: Partial<Look> | null; carColor?: string; livery: Livery | null; pov: boolean }) {
   const g = useRef<Group>(null);
+  // Fellow passengers and drivers, the same for the whole trip.
+  const crowd = useMemo(() => {
+    const r = rng(kind.length * 31 + (livery?.name.length ?? 0));
+    return Array.from({ length: 26 }, () => randomLook(r));
+  }, [kind, livery]);
   useFrame(({ clock }) => {
     if (!g.current) return;
     const t = clock.elapsedTime;
     // A little life: road bumps, a wobble on the boda, gentle banking in the air.
-    g.current.position.y = kind === "plane" ? Math.sin(t * 0.8) * 0.3 : kind === "walk" ? 0 : Math.abs(Math.sin(t * 7)) * 0.03;
+    g.current.position.y = kind === "plane" ? 2 + Math.sin(t * 0.8) * 0.3 : kind === "walk" ? 0.3 : Math.abs(Math.sin(t * 7)) * 0.03;
     g.current.rotation.z = kind === "boda" ? Math.sin(t * 1.3) * 0.05 : kind === "plane" ? Math.sin(t * 0.5) * 0.06 : 0;
   });
+  // In first person you are the camera: don't draw your own head in front of it.
+  const seated = (key: string, l: Partial<Look> | null | undefined, x: number, z: number, y: number, pose: "sit" | "drive" = "sit") =>
+    key === "you" && pov && kind !== "boda" ? null : <Character key={key} look={l} start={[x, z]} pose={pose} poseAt={{ x, z, rot: Math.PI, y }} idle="talk" />;
   return (
-    <group ref={g} position={[laneOf(kind), kind === "walk" ? 0.3 : 0, 0]}>
-      {kind === "walk" ? (
-        <Character look={look} start={[0, 0]} pose="walk" poseAt={{ x: 0, z: 0, rot: Math.PI, y: 0 }} />
-      ) : kind === "boda" ? (
-        <>
-          <Vehicle kind="boda" color="#c8102e" />
-          <group position={[0, 0.25, 0.15]} rotation={[0, Math.PI, 0]}>
-            <Character look={look} start={[0, 0]} pose="sit" poseAt={{ x: 0, z: 0, rot: Math.PI, y: 0.75 }} />
+    <group ref={g} position={[laneOf(kind), 0, 0]}>
+      <>
+        {kind === "walk" ? (
+          <Character look={look} start={[0, 0]} pose="walk" poseAt={{ x: 0, z: 0, rot: Math.PI, y: 0 }} />
+        ) : kind === "boda" ? (
+          <>
+            <VehicleModel name="boda" />
+            {seated("rider", crowd[0], 0, -0.05, 0.36, "drive")}
+            {seated("you", look, 0, 0.42, 0.42)}
+          </>
+        ) : kind === "plane" ? (
+          <VehicleModel name="airliner" interior />
+        ) : kind === "train" ? (
+          <Vehicle kind="train" color="#f5f5f4" />
+        ) : kind === "matatu" ? (
+          <>
+            <VehicleModel name={livery ? "nganya" : "matatu"} livery={livery} interior />
+            {(() => {
+              const S = livery ? NGANYA_SEATS : MATATU_SEATS;
+              return (
+                <>
+                  {seated("driver", crowd[0], S.driver[0], S.driver[1], S.driver[2], "drive")}
+                  {seated("you", look, S.you[0], S.you[1], S.you[2])}
+                  {S.rows.filter((_, i) => !livery || i % 2 === 0 || i < 6).slice(0, livery ? 14 : 5).map(([x, z], i) => seated(`p${i}`, crowd[i + 1], x, z, S.y))}
+                </>
+              );
+            })()}
+            {livery && <NganyaCabin livery={livery} />}
+          </>
+        ) : (
+          <>
+            <VehicleModel name={kind === "cab" ? "taxi" : "wagon"} color={kind === "cab" ? "#f5f5f4" : (carColor ?? "#1f2937")} interior />
+            {kind === "cab" ? (
+              <>
+                {seated("driver", crowd[0], 0.4, -0.25, 0.42, "drive")}
+                {seated("you", look, -0.4, 0.6, 0.42)}
+              </>
+            ) : (
+              seated("you", look, 0.4, -0.15, 0.42, "drive")
+            )}
+          </>
+        )}
+      </>
+    </group>
+  );
+}
+
+/** Inside a nganya: LED strips pulsing to the beat, a big screen up front and a subwoofer at the back. */
+function NganyaCabin({ livery }: { livery: Livery }) {
+  const leds = useRef<(import("three").MeshStandardMaterial | null)[]>([]);
+  const screen = useRef<import("three").MeshStandardMaterial>(null);
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime;
+    const beat = 0.6 + 0.4 * Math.abs(Math.sin(t * 4.2));
+    leds.current.forEach((m, i) => {
+      if (m) m.emissiveIntensity = beat * (i % 2 ? 1.6 : 2.2);
+    });
+    if (screen.current) screen.current.emissive.setHSL((t * 0.1) % 1, 0.8, 0.45);
+  });
+  return (
+    <group>
+      {/* floor and bucket seats in the livery's colours, like the real ones */}
+      <mesh position={[0, 0.55, 0.1]} receiveShadow>
+        <boxGeometry args={[2.4, 0.04, 7.8]} />
+        <meshStandardMaterial color="#1f1f23" />
+      </mesh>
+      {NGANYA_ROWS.flatMap((z) =>
+        NGANYA_X.map((x) => (
+          <group key={`${x}${z}`} position={[x, 0, z]}>
+            <mesh position={[0, 0.94, 0]} castShadow>
+              <boxGeometry args={[0.42, 0.1, 0.44]} />
+              <meshStandardMaterial color={livery.base[0]} roughness={0.6} />
+            </mesh>
+            <mesh position={[0, 1.3, 0.21]} rotation={[0.12, 0, 0]} castShadow>
+              <boxGeometry args={[0.44, 0.66, 0.08]} />
+              <meshStandardMaterial color={livery.base[0]} roughness={0.6} />
+            </mesh>
+            {[-0.2, 0.2].map((sx) => (
+              <mesh key={sx} position={[sx, 1.3, 0.21]} rotation={[0.12, 0, 0]}>
+                <boxGeometry args={[0.05, 0.62, 0.09]} />
+                <meshStandardMaterial color={livery.accent} roughness={0.5} />
+              </mesh>
+            ))}
+            <mesh position={[0, 0.74, 0]}>
+              <boxGeometry args={[0.08, 0.38, 0.08]} />
+              <meshStandardMaterial color="#4b5563" metalness={0.6} roughness={0.4} />
+            </mesh>
           </group>
-        </>
-      ) : kind === "plane" ? (
-        <Vehicle kind="plane" color="#f5f5f4" />
-      ) : kind === "train" ? (
-        <Vehicle kind="train" color="#f5f5f4" />
-      ) : (
-        <Vehicle kind={kind === "car" ? "car" : kind} color={kind === "matatu" ? "#f2b705" : kind === "cab" ? "#f5f5f4" : (carColor ?? "#1f2937")} />
+        )),
       )}
+      {[-0.95, 0.95].map((x, i) => (
+        <mesh key={x} position={[x, 3.05, 0.2]}>
+          <boxGeometry args={[0.04, 0.04, 7.4]} />
+          <meshStandardMaterial ref={(m) => void (leds.current[i] = m)} color={livery.led} emissive={livery.led} emissiveIntensity={2} />
+        </mesh>
+      ))}
+      <mesh position={[0, 3.15, 0.2]}>
+        <boxGeometry args={[0.05, 0.03, 7.4]} />
+        <meshStandardMaterial ref={(m) => void (leds.current[2] = m)} color={livery.accent} emissive={livery.accent} emissiveIntensity={2} />
+      </mesh>
+      <mesh position={[0, 2.75, -3.0]}>
+        <boxGeometry args={[1.4, 0.6, 0.06]} />
+        <meshStandardMaterial color="#050505" />
+      </mesh>
+      <mesh position={[0, 2.75, -2.965]}>
+        <planeGeometry args={[1.3, 0.52]} />
+        <meshStandardMaterial ref={screen} color="#111" emissive="#7c3aed" emissiveIntensity={1.4} />
+      </mesh>
+      <mesh position={[0, 0.85, 3.85]}>
+        <boxGeometry args={[1.6, 0.5, 0.4]} />
+        <meshStandardMaterial color="#0a0a0a" />
+      </mesh>
     </group>
   );
 }

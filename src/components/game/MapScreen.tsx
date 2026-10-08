@@ -145,7 +145,7 @@ export default function MapScreen({ s }: { s: GameState }) {
                           if (q.local) {
                             send(cmd);
                             open(null);
-                          } else startRide({ kind: m.id, title: m.label, from: here.name, to: target.name, minutes: q.minutes, finish: cmd });
+                          } else startRide({ kind: m.id, title: m.label, from: here.name, to: target.name, minutes: q.minutes, areas: [here.area, target.area], finish: cmd });
                         }}
                         className="flex items-center gap-2 rounded-2xl bg-background px-3 py-2 text-left transition enabled:hover:bg-sun/20 disabled:opacity-40"
                       >
