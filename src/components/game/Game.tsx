@@ -3,68 +3,48 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { useGame } from "@/game/store";
 import { useOnline } from "@/online/store";
-import Account from "./Account";
-import { Icon } from "./Icon";
+import AuthScreen, { claimDevice } from "./Account";
 import Creator from "./Creator";
 import Play from "./Play";
 
 const subscribe = (cb: () => void) => useGame.persist.onFinishHydration(cb);
 
+/** Account first: sign in, then load your life from the cloud or create one. */
 export default function Game() {
   const hydrated = useSyncExternalStore(subscribe, () => useGame.persist.hasHydrated(), () => false);
+  const me = useOnline((s) => s.me);
   const hasGame = useGame((s) => s.game !== null);
-  const [creating, setCreating] = useState(false);
-  const [login, setLogin] = useState(false);
+  const owner = useGame((s) => s.owner);
+  const [claiming, setClaiming] = useState<string | null>(null);
 
   useEffect(() => {
     useGame.persist.rehydrate();
     useOnline.getState().refresh();
   }, []);
 
-  if (!hydrated) return <TitleScreen />;
-  if (hasGame) return <Play />;
-  if (creating) return <Creator onBack={() => setCreating(false)} />;
-  return (
-    <>
-      <TitleScreen onStart={() => setCreating(true)} onLogin={() => setLogin(true)} />
-      {login && <Account initial="login" onClose={() => setLogin(false)} />}
-    </>
-  );
+  // Returning with a session cookie: make sure the save on this device is this account's.
+  const needsClaim = hydrated && !!me && owner !== me.username;
+  useEffect(() => {
+    if (!needsClaim || !me || claiming === me.username) return;
+    const user = me.username;
+    queueMicrotask(() => setClaiming(user));
+    claimDevice(user)
+      .then((clash) => clash && useGame.getState().load(clash.cloud, user))
+      .catch(() => useGame.getState().load(null, user));
+  }, [needsClaim, me, claiming]);
+
+  if (!hydrated || me === undefined || needsClaim) return <Splash />;
+  if (!me) return <AuthScreen />;
+  if (!hasGame) return <Creator />;
+  return <Play />;
 }
 
-function TitleScreen({ onStart, onLogin }: { onStart?: () => void; onLogin?: () => void }) {
+function Splash() {
   return (
-    <main className="flex flex-1 flex-col">
-      <div className="stripe h-3" />
-      <div className="mx-auto flex w-full max-w-xl flex-1 flex-col justify-center gap-8 px-4 py-12">
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-kred">The 254 life-sim</p>
-          <h1 className="font-display text-6xl font-extrabold leading-[0.95] sm:text-7xl">
-            Nairobi
-            <br />
-            Life
-          </h1>
-          <p className="mt-4 text-lg text-muted">
-            Move to the city, find a hustle, ride matatus, survive KPLC blackouts, and try to make it from a Kayole bedsitter to Karen.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-3 text-foreground/70" aria-hidden>
-          {["bus", "motorbike", "meat", "paw", "bolt", "device-mobile"].map((n) => (
-            <Icon key={n} name={n} size={28} />
-          ))}
-        </div>
-        <button
-          onClick={onStart}
-          disabled={!onStart}
-          className="w-full rounded-2xl bg-foreground px-6 py-4 font-display text-xl font-bold text-background transition hover:bg-kgreen disabled:opacity-50 sm:w-auto"
-        >
-          {onStart ? "Anza maisha →" : "Loading…"}
-        </button>
-        {onLogin && (
-          <button onClick={onLogin} className="text-left text-sm font-semibold text-muted underline-offset-4 hover:text-foreground hover:underline">
-            Already have a profile? Ingia (log in) and pick up your life →
-          </button>
-        )}
+    <main className="grid min-h-dvh place-items-center bg-[#bfe0f7]">
+      <div className="text-center">
+        <h1 className="font-display text-5xl font-extrabold">Nairobi Life</h1>
+        <p className="mt-2 animate-pulse text-muted">Loading Kanairo…</p>
       </div>
     </main>
   );

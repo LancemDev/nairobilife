@@ -63,7 +63,7 @@ export default function World(props: WorldProps) {
   const people: Person[] = useMemo(() => {
     const list: Omit<Person, "spot">[] = [
       ...npcsHere(s).map((id) => ({ key: `npc:${id}`, kind: "npc" as const, label: NPC[id].name, look: npcLook(id) })),
-      ...others.filter((p) => p.venue === s.location).map((p) => ({ key: `player:${p.username}`, kind: "player" as const, label: `@${p.username}`, look: p.look })),
+      ...others.filter((p) => p.venue === s.location && p.venue !== "home").map((p) => ({ key: `player:${p.username}`, kind: "player" as const, label: `@${p.username}`, look: p.look })),
     ];
     return list.map((p, i) => ({ ...p, spot: room.spots[(i * 5 + 3) % Math.max(1, room.spots.length)] ?? [0, 0] }));
   }, [s, others, room.spots]);
@@ -166,10 +166,7 @@ function Scene({
   return (
     <group>
       <Frame room={room} />
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.06, 0]} receiveShadow>
-        <circleGeometry args={[Math.max(room.w, room.d) * 1.2, 64]} />
-        <meshStandardMaterial color={room.outdoor ? "#8db86b" : "#c5d9b0"} />
-      </mesh>
+      <Island radius={Math.max(room.w, room.d) * 0.95} grass={room.outdoor ? "#8db86b" : "#b7d19a"} />
 
       {/* checkered floor, tiles sized to fit the room exactly */}
       <group onClick={floorClick}>
@@ -290,6 +287,38 @@ function Frame({ room }: { room: Room }) {
     }
   }, [get, width, height, room.w, room.d]);
   return null;
+}
+
+/**
+ * The plinth the scene sits on: a thick cylinder of earth under a grass top, with a darker
+ * rim, so each place reads as a diorama floating in the sky.
+ */
+function Island({ radius, grass }: { radius: number; grass: string }) {
+  const depth = 1.6;
+  return (
+    <group position={[0, -0.05, 0]}>
+      {/* grass cap */}
+      <mesh position={[0, -0.12, 0]} receiveShadow>
+        <cylinderGeometry args={[radius, radius, 0.24, 96]} />
+        <meshStandardMaterial color={grass} roughness={1} />
+      </mesh>
+      {/* topsoil band */}
+      <mesh position={[0, -0.24 - 0.25, 0]}>
+        <cylinderGeometry args={[radius * 0.995, radius * 0.985, 0.5, 96]} />
+        <meshStandardMaterial color="#8a6a4b" roughness={1} />
+      </mesh>
+      {/* deeper earth, tapering slightly */}
+      <mesh position={[0, -0.74 - (depth - 0.5) / 2, 0]}>
+        <cylinderGeometry args={[radius * 0.985, radius * 0.93, depth - 0.5, 96]} />
+        <meshStandardMaterial color="#6e5038" roughness={1} />
+      </mesh>
+      {/* underside rim */}
+      <mesh position={[0, -0.74 - (depth - 0.5) - 0.06, 0]}>
+        <cylinderGeometry args={[radius * 0.93, radius * 0.9, 0.12, 96]} />
+        <meshStandardMaterial color="#4f3926" roughness={1} />
+      </mesh>
+    </group>
+  );
 }
 
 function Wall({ p, s, c }: { p: [number, number, number]; s: [number, number, number]; c: string }) {

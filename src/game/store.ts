@@ -7,10 +7,12 @@ import type { GameState } from "./types";
 
 interface GameStore {
   game: GameState | null;
-  start: (life: NewLife) => void;
+  /** Username whose life is saved on this device, so accounts never see each other's saves. */
+  owner: string | null;
+  start: (life: NewLife, owner: string) => void;
   send: (cmd: Command) => void;
   /** Replace the local life with one from the cloud. */
-  load: (game: GameState) => void;
+  load: (game: GameState | null, owner: string) => void;
   reset: () => void;
 }
 
@@ -38,10 +40,11 @@ export const useGame = create<GameStore>()(
   persist(
     (set) => ({
       game: null,
-      start: (life) => set({ game: newGame(life) }),
+      owner: null,
+      start: (life, owner) => set({ game: newGame(life), owner }),
       send: (cmd) => set((s) => (s.game ? { game: dispatch(s.game, cmd) } : s)),
-      load: (game) => set({ game }),
-      reset: () => set({ game: null }),
+      load: (game, owner) => set({ game, owner }),
+      reset: () => set({ game: null, owner: null }),
     }),
     {
       name: "nairobilife-save",

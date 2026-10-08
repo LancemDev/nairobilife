@@ -6,7 +6,6 @@ import { useState } from "react";
 import { useGame } from "@/game/store";
 import { api } from "@/online/api";
 import { useOnline } from "@/online/store";
-import Account from "./Account";
 import { Avatar } from "./Avatar";
 import { ProfileEditor } from "./Online";
 import { SKILL_KEYS, type GameState } from "@/game/types";
@@ -15,7 +14,8 @@ import { Btn, Card, IconLabel, ksh, Meter } from "./ui";
 
 export default function Me({ s }: { s: GameState }) {
   const send = useGame((st) => st.send);
-  const reset = useGame((st) => st.reset);
+  const load = useGame((st) => st.load);
+  const me = useOnline((st) => st.me);
   const career = s.job && CAREER[s.job.career];
   const dream = ASPIRATION[s.player.aspirationId];
   const dreamPct = Math.min(1, dream.progress(s));
@@ -155,7 +155,7 @@ export default function Me({ s }: { s: GameState }) {
           <Stat label="Promotions" value={s.stats.promotions} />
           <Stat label="Friends" value={Object.values(s.relationships).filter((r) => r.rel >= 30).length} />
         </dl>
-        <button onClick={() => window.confirm("Start a new life? Your current save will be lost.") && reset()} className="mt-4 text-sm text-muted underline-offset-2 hover:text-kred hover:underline">
+        <button onClick={() => window.confirm("Start a new life? Your current save will be lost.") && me && load(null, me.username)} className="mt-4 text-sm text-muted underline-offset-2 hover:text-kred hover:underline">
           Start a new life
         </button>
       </Card>
@@ -175,39 +175,36 @@ function Stat({ label, value }: { label: string; value: string | number }) {
 function ProfileCard({ s }: { s: GameState }) {
   const me = useOnline((st) => st.me);
   const setMe = useOnline((st) => st.setMe);
+  const reset = useGame((st) => st.reset);
   const [edit, setEdit] = useState(false);
-  const [account, setAccount] = useState(false);
   return (
     <Card>
       <div className="flex items-center gap-4">
-        {s.player.look ? <Avatar look={s.player.look} size={64} variant="full" /> : <span className="text-5xl">{s.player.avatar}</span>}
+        <Avatar look={s.player.look} size={64} variant="full" />
         <div className="min-w-0 flex-1">
           <div className="font-display text-xl font-bold">{me?.displayName ?? s.player.name}</div>
-          <div className="text-sm text-muted">{me ? `@${me.username} · Online` : "Playing offline on this device"}</div>
+          {me && <div className="text-sm text-muted">@{me.username}</div>}
           {me?.bio && <div className="truncate text-sm italic">“{me.bio}”</div>}
         </div>
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
         <Btn variant="ghost" onClick={() => setEdit(true)}>
-          <IconLabel name="palette">{me ? "Edit profile" : "Edit look"}</IconLabel>
+          <IconLabel name="palette">Edit profile</IconLabel>
         </Btn>
-        {me ? (
-          <Btn
-            variant="ghost"
-            onClick={async () => {
-              await api.putSave(s).catch(() => {});
-              await api.logout().catch(() => {});
-              setMe(null);
-            }}
-          >
-            Log out
-          </Btn>
-        ) : (
-          <Btn onClick={() => setAccount(true)}><IconLabel name="world">Go online</IconLabel></Btn>
-        )}
+        <Btn
+          variant="ghost"
+          onClick={async () => {
+            // Save, then clear this device so the next person to sign in starts clean.
+            await api.putSave(s).catch(() => {});
+            await api.logout().catch(() => {});
+            reset();
+            setMe(null);
+          }}
+        >
+          <IconLabel name="door-exit">Log out</IconLabel>
+        </Btn>
       </div>
       {edit && <ProfileEditor onClose={() => setEdit(false)} />}
-      {account && <Account onClose={() => setAccount(false)} />}
     </Card>
   );
 }

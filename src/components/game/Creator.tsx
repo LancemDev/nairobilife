@@ -5,6 +5,8 @@ import { ASPIRATIONS, BIRTH_LOTTERY, ESTATE, ORIGINS, TRAITS, UNIT } from "@/gam
 import { randomLook } from "@/game/look";
 import { weeklyRent } from "@/game/engine";
 import { useGame } from "@/game/store";
+import { api } from "@/online/api";
+import { useOnline } from "@/online/store";
 import type { GameState } from "@/game/types";
 import { AvatarBuilder } from "./Avatar";
 import { Icon } from "./Icon";
@@ -12,15 +14,25 @@ import { IconLabel, ksh } from "./ui";
 
 const STEPS = ["Look", "Personality", "Dream", "Birth lottery"] as const;
 
-export default function Creator({ onBack }: { onBack: () => void }) {
+export default function Creator() {
   const start = useGame((s) => s.start);
+  const me = useOnline((s) => s.me);
   const [step, setStep] = useState(0);
-  const [name, setName] = useState("");
+  const [name, setName] = useState(me?.displayName ?? "");
   const [look, setLook] = useState(() => randomLook());
   const [originId, setOrigin] = useState(ORIGINS[0].id);
   const [traits, setTraits] = useState<string[]>([]);
   const [aspirationId, setAspiration] = useState(ASPIRATIONS[0].id);
   const [lotteryId, setLottery] = useState<string | null>(null);
+
+  const begin = () => {
+    if (!me) return;
+    start({ name: name.trim(), avatar: "🧑🏾", look, originId, traits, aspirationId, lotteryId: lotteryId! }, me.username);
+    // Save the new life to the account straight away, and use the look as the profile picture.
+    const game = useGame.getState().game;
+    if (game) api.putSave(game).catch(() => {});
+    api.updateProfile({ look }).then((r) => useOnline.getState().setMe(r.user)).catch(() => {});
+  };
 
   const canNext = [name.trim().length > 0, traits.length === 2, !!aspirationId, !!lotteryId][step];
   const toggleTrait = (id: string) =>
@@ -29,7 +41,7 @@ export default function Creator({ onBack }: { onBack: () => void }) {
   return (
     <main className="mx-auto w-full max-w-2xl px-4 py-6">
       <div className="flex items-center justify-between">
-        <button onClick={step ? () => setStep(step - 1) : onBack} className="text-sm text-muted hover:text-foreground">
+        <button onClick={() => setStep(step - 1)} className={`text-sm text-muted hover:text-foreground ${step ? "" : "invisible"}`}>
           ← Back
         </button>
         <ol className="flex gap-1.5" aria-label="Steps">
@@ -101,7 +113,7 @@ export default function Creator({ onBack }: { onBack: () => void }) {
 
       <button
         disabled={!canNext}
-        onClick={() => (step < STEPS.length - 1 ? setStep(step + 1) : start({ name: name.trim(), avatar: "🧑🏾", look, originId, traits, aspirationId, lotteryId: lotteryId! }))}
+        onClick={() => (step < STEPS.length - 1 ? setStep(step + 1) : begin())}
         className="mt-8 w-full rounded-2xl bg-foreground px-6 py-4 font-display text-xl font-bold text-background transition enabled:hover:bg-kgreen disabled:opacity-40"
       >
         {step < STEPS.length - 1 ? "Next →" : "Move to Kanairo"}

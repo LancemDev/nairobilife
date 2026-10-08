@@ -29,7 +29,6 @@ import { useGame } from "@/game/store";
 import type { GameState } from "@/game/types";
 import { splitIcon } from "@/game/icons";
 import { useOnline } from "@/online/store";
-import Account from "./Account";
 import GroceryShop from "./GroceryShop";
 import { UjumbeApp, WatuApp } from "./Online";
 import { Icon } from "./Icon";
@@ -51,7 +50,6 @@ const APPS: { id: App; label: string; emoji: string; color: string }[] = [
 
 export default function Phone({ s }: { s: GameState }) {
   const [app, setApp] = useState<App | null>(null);
-  const me = useOnline((st) => st.me);
   const unread = useOnline((st) => st.unread);
   const current = APPS.find((a) => a.id === app);
   return (
@@ -96,25 +94,13 @@ export default function Phone({ s }: { s: GameState }) {
               {app === "ndege" && <Ndege s={s} />}
               {app === "siasa" && <Siasa s={s} />}
               {app === "gist" && <Gist s={s} />}
-              {(app === "ujumbe" || app === "watu") && (me ? app === "ujumbe" ? <UjumbeApp /> : <WatuApp /> : <GoOnline />)}
+              {app === "ujumbe" && <UjumbeApp />}
+              {app === "watu" && <WatuApp />}
             </div>
           </div>
         )}
       </div>
     </div>
-  );
-}
-
-function GoOnline() {
-  const [open, setOpen] = useState(false);
-  return (
-    <Card>
-      <p className="text-sm">Create a profile to message real players, see who&apos;s around, and send M-Pesa to friends.</p>
-      <Btn className="mt-3 w-full" onClick={() => setOpen(true)}>
-        <IconLabel name="world">Go online</IconLabel>
-      </Btn>
-      {open && <Account onClose={() => setOpen(false)} />}
-    </Card>
   );
 }
 
