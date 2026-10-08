@@ -74,6 +74,8 @@ export interface WorldProps {
   onSelect: (prop: Prop | null) => void;
   onNpc: (id: string) => void;
   onPlayer: (username: string) => void;
+  /** Title-screen mode: no labels or clicks, the camera slowly circles the room. */
+  showcase?: boolean;
 }
 
 const LABEL_STYLE = {
@@ -113,17 +115,21 @@ export default function World(props: WorldProps) {
 
   return (
     <div className="absolute inset-0">
-      <Canvas shadows dpr={[1, 1.75]} camera={{ position: [10, 12, 14], fov: 40 }} className="touch-none">
+      <Canvas shadows dpr={[1, 1.75]} camera={{ position: [10, 12, 14], fov: 40 }} className={`touch-none ${props.showcase ? "pointer-events-none" : ""}`}>
         <color attach="background" args={["#bfe0f7"]} />
         <hemisphereLight args={["#ffffff", "#8fb37a", 0.9]} />
         <directionalLight position={[8, 14, 6]} intensity={1.6} castShadow shadow-mapSize={[1024, 1024]} shadow-camera-left={-12} shadow-camera-right={12} shadow-camera-top={12} shadow-camera-bottom={-12} />
         {/* Remount per room so the player starts at the door of each new place. */}
         <Scene key={room.key} room={room} people={people} hover={hover} setHover={setHover} anchor={anchor} {...props} />
         <Projector anchors={anchors} />
-        <OrbitControls makeDefault enablePan={false} minDistance={8} maxDistance={60} minPolarAngle={0.45} maxPolarAngle={1.2} minAzimuthAngle={-0.9} maxAzimuthAngle={1.2} />
+        {props.showcase ? (
+          <OrbitControls makeDefault enabled={false} autoRotate autoRotateSpeed={0.5} />
+        ) : (
+          <OrbitControls makeDefault enablePan={false} minDistance={8} maxDistance={60} minPolarAngle={0.45} maxPolarAngle={1.2} minAzimuthAngle={-0.9} maxAzimuthAngle={1.2} />
+        )}
       </Canvas>
       {/* One DOM layer for every label, positioned by the Projector each frame. */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+      <div className={`pointer-events-none absolute inset-0 overflow-hidden ${props.showcase ? "hidden" : ""}`}>
         {labels.map((l) => (
           <span
             key={l.key}

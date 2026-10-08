@@ -6,6 +6,7 @@ import { useOnline } from "@/online/store";
 import AuthScreen, { claimDevice } from "./Account";
 import Creator from "./Creator";
 import Play from "./Play";
+import Welcome from "./Welcome";
 
 const subscribe = (cb: () => void) => useGame.persist.onFinishHydration(cb);
 
@@ -16,6 +17,9 @@ export default function Game() {
   const hasGame = useGame((s) => s.game !== null);
   const owner = useGame((s) => s.owner);
   const [claiming, setClaiming] = useState<string | null>(null);
+  // Only shown when the page opens; once you continue (or create a life) you're in.
+  const [entered, setEntered] = useState(false);
+  const game = useGame((s) => s.game);
 
   useEffect(() => {
     useGame.persist.rehydrate();
@@ -35,7 +39,8 @@ export default function Game() {
 
   if (!hydrated || me === undefined || needsClaim) return <Splash />;
   if (!me) return <AuthScreen />;
-  if (!hasGame) return <Creator />;
+  if (!hasGame) return <Creator onDone={() => setEntered(true)} />;
+  if (!entered) return <Welcome s={game!} onContinue={() => setEntered(true)} />;
   return <Play />;
 }
 

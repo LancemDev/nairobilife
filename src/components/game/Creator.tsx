@@ -14,7 +14,7 @@ import { IconLabel, ksh } from "./ui";
 
 const STEPS = ["Look", "Personality", "Dream", "Birth lottery"] as const;
 
-export default function Creator() {
+export default function Creator({ onDone }: { onDone?: () => void }) {
   const start = useGame((s) => s.start);
   const me = useOnline((s) => s.me);
   const [step, setStep] = useState(0);
@@ -32,6 +32,7 @@ export default function Creator() {
     const game = useGame.getState().game;
     if (game) api.putSave(game).catch(() => {});
     api.updateProfile({ look }).then((r) => useOnline.getState().setMe(r.user)).catch(() => {});
+    onDone?.();
   };
 
   const canNext = [name.trim().length > 0, traits.length === 2, !!aspirationId, !!lotteryId][step];
