@@ -54,7 +54,7 @@ export const BIRTH_LOTTERY: BirthLottery[] = [
 ];
 
 export const TRAITS: Trait[] = [
-  { id: "hustler", label: "Hustler", emoji: "💼", desc: "Sees doh everywhere. Hustle grows faster and bosses notice.", skill: { hustle: 1.5 }, work: 0.2 },
+  { id: "hustler", label: "Hustler", emoji: "💼", desc: "Sees packe everywhere. Hustle grows faster and bosses notice.", skill: { hustle: 1.5 }, work: 0.2 },
   { id: "foodie", label: "Foodie", emoji: "🍲", desc: "Lives for pilau. Cooking grows fast and food hits different.", skill: { cooking: 1.6 }, tagFun: { eat: 10, cook: 8 } },
   { id: "sherehe", label: "Sherehe Spirit", emoji: "🎉", desc: "Always ready to party. Nightlife hits different, but you get bored faster.", decay: { fun: 1.3 }, tagFun: { party: 15, dance: 10 } },
   { id: "gymRat", label: "Gym Rat", emoji: "💪", desc: "Leg day every day. Fitness grows fast and workouts feel good.", skill: { fitness: 1.6 }, tagFun: { workout: 12 } },

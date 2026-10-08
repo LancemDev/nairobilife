@@ -46,10 +46,10 @@ export function PlayerRow({ p, right, sub }: { p: Profile; right?: React.ReactNo
 }
 
 const PLAYER_SOCIALS = [
-  { id: "hello", label: "Say hello", icon: "hand-stop", gain: "+Social", lines: ["Rada! Niaje?", "Sasa! Uko poa?", "Mambo! Karibu sana."] },
+  { id: "hello", label: "Say hello", icon: "hand-stop", gain: "+Social", lines: ["Rada! Form ni gani?", "Riang! Uko aje?", "Oyaa! Karibu sana, morio."] },
   { id: "gist", label: "Gist", icon: "message-circle", gain: "+Fun · +Social", lines: ["Nipe story ya leo, kuna nini?", "Umeskia ile ya KPLC jana?", "Mtaa iko aje upande yako?"] },
   { id: "joke", label: "Crack joke", icon: "mood-happy", gain: "+Fun · +Social", lines: ["Matatu ilikuwa full hadi makanga alikaa kwa roof.", "Fuliza imenijua kuliko mum yangu.", "Nilienda gym mara moja, sasa niko na six-pack ya soda."] },
-  { id: "shade", label: "Throw shade", icon: "mood-annoyed", gain: "+Fun", lines: ["Hiyo luku umetoa Gikomba ama?", "Wewe ni wa Pipeline? Nimeona ndio calves.", "Kuna mtu ameona doh yako? Hata mimi sijaiona."] },
+  { id: "shade", label: "Throw shade", icon: "mood-annoyed", gain: "+Fun", lines: ["Hiyo luku umetoa Gikomba ama?", "Wewe ni wa Pipeline? Nimeona ndio calves.", "Kuna mtu ameona packe yako? Hata mimi sijaiona."] },
 ] as const;
 
 const pickLine = (lines: readonly string[]) => lines[Math.floor(Math.random() * lines.length)];

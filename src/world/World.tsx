@@ -297,7 +297,7 @@ function Scene({
               document.body.style.cursor = "";
             }}
           >
-            <PropModel kind={p.kind} accent={room.accent} />
+            <PropModel kind={p.kind} accent={room.accent} venue={s.location} />
           </group>
         );
       })}

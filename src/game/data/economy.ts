@@ -3,7 +3,7 @@ import type { Business, Car, Course, Office, Plot, Policy, Sickness } from "../t
 export const BUSINESSES: Business[] = [
   { id: "smokieStand", name: "Smokie & egg stand", emoji: "🌭", price: 15000, weekly: [2500, 5500], blurb: "A cart at the stage. Kanjo permitting." },
   { id: "mitumbaStall", name: "Mitumba stall", emoji: "🧥", price: 40000, weekly: [4000, 9000], blurb: "A Gikomba stall with a bale a week." },
-  { id: "mpesaShop", name: "M-Pesa & airtime shop", emoji: "📲", price: 80000, weekly: [6000, 12000], blurb: "Float, commission, a lot of \"niaje boss\"." },
+  { id: "mpesaShop", name: "M-Pesa & airtime shop", emoji: "📲", price: 80000, weekly: [6000, 12000], blurb: "Float, commission, a lot of \"rada boss, nitumie M-Sape\"." },
   { id: "kinyozi", name: "Kinyozi", emoji: "💈", price: 150000, weekly: [10000, 22000], blurb: "Three chairs, one TV, endless football arguments." },
   { id: "chipsJoint", name: "Chips & kuku joint", emoji: "🍟", price: 220000, weekly: [14000, 30000], blurb: "Students' favourite, open late." },
   { id: "carWash", name: "Car wash", emoji: "🚿", price: 320000, weekly: [20000, 40000], blurb: "Pressure washers and loud music." },

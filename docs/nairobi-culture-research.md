@@ -59,6 +59,12 @@ ugali sukuma, pilau, Eastleigh shawarma / camel / spiced tea.
 - Police: *karao / sanse / hessy*, *kanjo* (city council askaris)
 - Vibes: *kiki* (clout), *imbo* (fake), *noma* (intense), *wueh* (exclamation), *niko kadi* (I'm set)
 
+## Sheng refresh (2026-10-08)
+Cross-checked across TNX Africa/Standard's Sheng feature, Kelxfy and Kenyan Magazine 2026 lists. Reddit (r/Kenya) still blocked to automated access.
+- **Use (current):** rada, riang, form (plans / what's up), oyaa, morio, mbogi, buda, mokoro, mziza (parent), siku zombo, M-Sape, packe / ganji / mukuchu (money), jongo / ng'at (100), rwabe (200), thiang' / tonje (phone), luku, omoka, shera, banja, gwaya, ngasha, malo, kiki, imbo, mtiaji, zii / bilaz (no; Eastlands / uptown), "una diglo?" (you get me?), walai, warena (fire, flashy), mboka (job), mraa (hustle), mayibe / zanabe (your area), rotejo (house), hessy / mbaru / saigon (police), kanjo, dingo (thief), pinji (phone snatcher), kirende (crowd), choch (hidden corner), wantam (one term, political), anguka nayo (2024 protests).
+- **Matatu/boda:** nganya / mboko, ma3 / mathree, dere (driver), makanga / donda / kamagera (conductor), debe (sound system), "tao tao", "shika mbele", "panda tukam".
+- **Dated (avoid):** nangos (phone, 2008), mresh, peng / pre-supuu era, doh (replaced by packe / ganji), "niaje/sasa poa" as the default greeting (still understood, but reads older).
+
 ## Nganyas by route (researched 2026-10-08)
 | Route | Nganyas | Look |
 |---|---|---|

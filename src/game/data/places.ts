@@ -1,13 +1,13 @@
 import type { Area, Estate, Unit, Venue } from "../types";
 
 export const AREAS: Area[] = [
-  { id: "cbd", name: "CBD", emoji: "🏙️", x: 50, y: 47, blurb: "Everyone passes through, nobody stays.", vibe: "Kencom imejaa, makanga wanaita \"Ngong Road, Rongai, tao tao!\"" },
+  { id: "cbd", name: "CBD", emoji: "🏙️", x: 50, y: 47, blurb: "Everyone passes through, nobody stays.", vibe: "Kencom imejaa kirende, makanga wanaita \"Ngong Road, Ongata, tao tao!\"" },
   { id: "westlands", name: "Westlands", emoji: "🌃", x: 36, y: 35, blurb: "\"Westie\": tech offices by day, Woodvale Grove by night.", vibe: "Amapiano owns Saturday here." },
   { id: "kilimani", name: "Kilimani", emoji: "☕", x: 34, y: 52, blurb: "Young professionals, rooftop bars, content houses.", vibe: "Everyone here has a podcast." },
   { id: "upperhill", name: "Upper Hill", emoji: "🏢", x: 44, y: 56, blurb: "Banks, KNH and a lot of lanyards.", vibe: "Lunch is at the kibanda, not the canteen." },
   { id: "eastleigh", name: "Eastleigh", emoji: "🛍️", x: 61, y: 38, blurb: "Somali trade hub. Wholesale everything, best food after 6pm.", vibe: "Warrias wameshinda kwa duka, chai ni ya spice." },
   { id: "gikomba", name: "Gikomba", emoji: "🧺", x: 61, y: 51, blurb: "Mitumba heaven. Haggle or go home.", vibe: "\"Mia mia! Chagua chagua!\"" },
-  { id: "eastlands", name: "Eastlands", emoji: "🎶", x: 74, y: 47, blurb: "Birthplace of Sheng, gengetone and nganya culture.", vibe: "Mtaa ni mtaa. Hapa ndio kwa kina mbogi." },
+  { id: "eastlands", name: "Eastlands", emoji: "🎶", x: 74, y: 47, blurb: "Birthplace of Sheng, gengetone and nganya culture.", vibe: "Mayibe ni mayibe. Mbogi iko hapa siku zombo." },
   { id: "thikaroad", name: "Thika Road", emoji: "🛣️", x: 66, y: 22, blurb: "TRM, Kasarani stadium and bachelors in Roysambu.", vibe: "\"Roysambu convinces you to stay single. Kasarani inspires you to marry.\"" },
   { id: "ruaka", name: "Ruaka", emoji: "🎡", x: 33, y: 13, blurb: "Apartments everywhere, a big mall, water sometimes.", vibe: "Maji ilienda Jumanne, haijarudi." },
   { id: "karura", name: "Karura Forest", emoji: "🌳", x: 47, y: 25, blurb: "1,000 hectares of green inside the city.", vibe: "Sunday runners and first dates." },
@@ -15,9 +15,9 @@ export const AREAS: Area[] = [
   { id: "langata", name: "Lang'ata", emoji: "🦒", x: 40, y: 73, blurb: "Carnivore, giraffes and lions next to the skyline.", vibe: "Simba kwa park, nyama kwa Carnivore." },
   { id: "karen", name: "Karen", emoji: "🐎", x: 22, y: 78, blurb: "Money, space and quiet.", vibe: "\"Karen people\" don't take matatus." },
   { id: "runda", name: "Runda", emoji: "🏰", x: 53, y: 11, blurb: "Diplomats, gated mansions, Village Market.", vibe: "The gate has a gate." },
-  { id: "rongai", name: "Rongai", emoji: "🚐", x: 32, y: 90, blurb: "Home of the flashiest nganyas in Kenya.", vibe: "Nganya inahukumiwa na face card, sound, lights na vibe." },
-  { id: "kitengela", name: "Kitengela", emoji: "🌆", x: 80, y: 88, blurb: "Nairobi's new party town and land boom.", vibe: "Plot ni plot. Namanga Road haikulali." },
-  { id: "jkia", name: "JKIA", emoji: "✈️", x: 74, y: 70, blurb: "The airport, Mombasa Road and the Expressway.", vibe: "Expressway ni ya wenye doh." },
+  { id: "rongai", name: "Rongai", emoji: "🚐", x: 32, y: 90, blurb: "Home of the flashiest nganyas in Kenya.", vibe: "Nganya inahukumiwa na face card, debe, lights na vibe. Baba Yaga ni warena." },
+  { id: "kitengela", name: "Kitengela", emoji: "🌆", x: 80, y: 88, blurb: "Nairobi's new party town and land boom.", vibe: "Kila mtu ana plot. Namanga Road hailali." },
+  { id: "jkia", name: "JKIA", emoji: "✈️", x: 74, y: 70, blurb: "The airport, Mombasa Road and the Expressway.", vibe: "Expressway ni ya wenye packe." },
   { id: "ngong", name: "Ngong Hills", emoji: "⛰️", x: 10, y: 88, blurb: "Wind turbines and views over the Rift Valley.", vibe: "Weekend hike, Monday regret." },
 ];
 

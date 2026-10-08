@@ -11,14 +11,35 @@ import { useUi } from "./uiStore";
 const RideScene = dynamic(() => import("@/world/RideScene"), { ssr: false });
 
 const LINES: Record<RideKind, string[]> = {
-  matatu: ["The makanga leans out: \"Tao tao, mia mbili!\"", "Gengetone at full volume. The whole nganya is vibing.", "Jam ahead. The driver takes the pavement.", "Someone's selling sweets at the stage before you even stop."],
-  boda: ["Your rider weaves between two matatus. Hold on tight.", "\"Shika hapa, boss.\" You do.", "A shortcut through a petrol station. Classic."],
-  cab: ["The driver wants to talk about fuel prices.", "Lingala on the radio, AC on full.", "\"Si utanirate five stars, boss?\""],
-  car: ["Hooting at the roundabout. Nairobi traffic, as usual.", "A hawker taps on your window with phone chargers.", "Smooth on the Expressway. Worth the toll."],
-  walk: ["A hawker offers you socks, sunglasses and a charger.", "The smell of roasting maize follows you down the street.", "You dodge a boda on the pavement. Twice."],
+  matatu: [
+    "Makanga anagonga mlango: \"Shika mbele, shika mbele, kuna nafasi!\"",
+    "\"Fare ni jongo! Lipa kabla tufike stage.\" You send it on M-Sape.",
+    "The dere overlaps on Mombasa Road. Everyone holds the seat in front.",
+    "Hessy at the roundabout. The makanga hops off, has a word, hops back on.",
+    "Gengetone on the debe, then amapiano. Nobody complains.",
+    "A hawker squeezes in at the stage: sweets, chargers, Bible verses.",
+  ],
+  boda: [
+    "\"Boss, shika hapa vizuri.\" There's no second helmet. There never is.",
+    "Your rider takes the pavement past a jam of nganyas.",
+    "A shortcut through a petrol station. Classic boda.",
+    "\"Umesikia hiyo ya wantam?\" Your rider wants to talk politics at 60 km/h.",
+    "Hessy ahead. Your rider takes a choch you didn't know existed.",
+  ],
+  cab: ["The driver wants to talk about fuel prices.", "Lingala on the radio, AC on full.", "\"Boss, utanipea five stars, sindio?\"", "The driver takes the Expressway. The toll goes on your fare."],
+  car: ["Hooting at the roundabout. Nairobi traffic, as usual.", "A hawker taps on your window with phone chargers.", "Smooth on the Expressway. Worth the toll.", "A nganya cuts in. You let it go. You always let it go."],
+  walk: ["A hawker offers you socks, shades and a charger.", "The smell of roasting maize follows you down the street.", "You dodge a boda on the pavement. Twice.", "Kirende ya watu at the stage. You squeeze through."],
   plane: ["Tea and biscuits from the cabin crew.", "Clouds below, the Rift Valley beneath them.", "\"Cabin crew, prepare for landing.\""],
   train: ["Giraffes in Tsavo. Everyone rushes to the window.", "The first-class trolley comes round with samosas.", "Elephants by a waterhole. Phones out."],
 };
+
+/** Extra lines inside a nganya, where the ride itself is the show. */
+const NGANYA_LINES = [
+  "The screen up front plays a gengetone video. The whole nganya sings along.",
+  "LEDs pulse to the bass. Someone films a TikTok in the back seat.",
+  "\"Hii ni warena!\" The makanga turns the debe up another notch.",
+  "Bucket seats, Wi-Fi and a DJ mix. This is why you waited for this one.",
+];
 
 const KIND_ICON: Record<RideKind, string> = { matatu: "bus", boda: "motorbike", cab: "car", car: "car", walk: "walk", plane: "plane", train: "train" };
 
@@ -55,7 +76,8 @@ export default function RideOverlay() {
   });
 
   const left = Math.max(0, Math.ceil(total - elapsed));
-  const line = LINES[ride.kind][Math.floor(elapsed / 4) % LINES[ride.kind].length];
+  const lines = livery ? [...NGANYA_LINES, ...LINES.matatu] : LINES[ride.kind];
+  const line = lines[Math.floor(elapsed / 4) % lines.length];
   return (
     <div className="absolute inset-0 z-40 bg-[#cfe3f0]">
       <RideScene kind={ride.kind} cam={cam} look={look} livery={livery} onReady={() => setReady(true)} />

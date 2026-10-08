@@ -1,7 +1,9 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import type { PropKind } from "./layout";
+import { LIVERIES } from "./liveries";
+import { VehicleModel } from "./Vehicles";
 
 type V3 = [number, number, number];
 
@@ -58,7 +60,10 @@ function Chair({ p, c = "#c8102e", rot = 0 }: { p: V3; c?: string; rot?: number 
 }
 
 /** Low-poly model for each prop kind, built around the origin, facing +z. */
-export function PropModel({ kind, accent }: { kind: PropKind; accent: string }): ReactNode {
+/** Stages show the nganyas that actually run from them. */
+const STAGE_NGANYA: Record<string, number> = { rongaiStage: 0, nganyaStage: 2 };
+
+export function PropModel({ kind, accent, venue }: { kind: PropKind; accent: string; venue?: string }): ReactNode {
   switch (kind) {
     case "bed":
       return (
@@ -410,25 +415,23 @@ export function PropModel({ kind, accent }: { kind: PropKind; accent: string }):
           <Box p={[0.8, 1.7, -0.8]} s={[0.15, 0.25, 0.05]} c="#e0f2fe" />
         </group>
       );
-    case "matatu":
+    case "matatu": {
+      const n = venue ? STAGE_NGANYA[venue] : undefined;
+      // Slightly scaled down so a whole bus fits in a room slot.
       return (
-        <group>
-          <Box p={[0, 0.95, 0]} s={[2.2, 1.3, 3.6]} c={accent} />
-          <Box p={[0, 1.2, 0]} s={[2.22, 0.45, 3]} c="#111827" />
-          <Box p={[1.12, 0.8, 0.2]} s={[0.02, 0.35, 2.4]} c="#7c3aed" e="#a855f7" />
-          <Box p={[-1.12, 0.8, 0.2]} s={[0.02, 0.35, 2.4]} c="#7c3aed" e="#a855f7" />
-          <Box p={[0, 1.15, 1.81]} s={[1.9, 0.5, 0.02]} c="#93c5fd" />
-          {[-1.1, 1.1].flatMap((x) => [-1.2, 1.2].map((z) => <Cyl key={`${x}${z}`} p={[x, 0.3, z]} r={0.3} h={0.2} rot={[0, 0, Math.PI / 2]} c={DARK} />))}
+        <group scale={n === undefined ? 0.7 : 0.6}>
+          <Suspense fallback={null}>
+            <VehicleModel name={n === undefined ? "matatu" : "nganya"} livery={n === undefined ? null : LIVERIES[n]} />
+          </Suspense>
         </group>
       );
+    }
     case "motorbike":
       return (
         <group>
-          <Cyl p={[0, 0.3, 0.6]} r={0.3} h={0.1} rot={[0, 0, Math.PI / 2]} c={DARK} />
-          <Cyl p={[0, 0.3, -0.6]} r={0.3} h={0.1} rot={[0, 0, Math.PI / 2]} c={DARK} />
-          <Box p={[0, 0.6, 0]} s={[0.25, 0.3, 1.1]} c="#c8102e" />
-          <Box p={[0, 0.8, -0.2]} s={[0.3, 0.1, 0.6]} c={DARK} />
-          <Box p={[0, 0.95, 0.55]} s={[0.7, 0.05, 0.05]} c={METAL} />
+          <Suspense fallback={null}>
+            <VehicleModel name="boda" />
+          </Suspense>
         </group>
       );
     case "pews":

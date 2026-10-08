@@ -117,6 +117,9 @@ function scenery(venue: string, w: number, d: number): Deco[] {
   if (STAGES.has(venue))
     return [
       { kind: "matatu", x: w / 2 - 2.2, z: 1.5, rot: -0.3 },
+      // Bodas waiting at the stage, like every stage in Nairobi.
+      { kind: "motorbike", x: -w / 2 + 2, z: 0.6, rot: 0.4 },
+      { kind: "motorbike", x: -w / 2 + 2.9, z: 1.3, rot: 0.2 },
       { kind: "seats", x: -2.4, z: 2.4 },
       { kind: "crates", x: -w / 2 + 1.2, z: d / 2 - 1.2 },
     ];
