@@ -2,6 +2,7 @@
 
 import { Suspense, type ReactNode } from "react";
 import type { PropKind } from "./layout";
+import { FurnitureModel, hasFurniture } from "./Furniture";
 import { LIVERIES } from "./liveries";
 import { VehicleModel } from "./Vehicles";
 
@@ -64,6 +65,7 @@ function Chair({ p, c = "#c8102e", rot = 0 }: { p: V3; c?: string; rot?: number 
 const STAGE_NGANYA: Record<string, number> = { rongaiStage: 0, nganyaStage: 2 };
 
 export function PropModel({ kind, accent, venue }: { kind: PropKind; accent: string; venue?: string }): ReactNode {
+  if (hasFurniture(kind)) return <FurnitureModel kind={kind} />;
   switch (kind) {
     case "bed":
       return (

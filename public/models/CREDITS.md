@@ -3,6 +3,7 @@
 ## CC0 (public domain)
 - People, hair and animations: Universal Base Characters and Universal Animation Library by Quaternius (quaternius.com)
 - Traffic cars (sedan, suv, suv-luxury, police, truck, ambulance, van): Car Kit by Kenney (kenney.nl)
+- Furniture (models/furniture): Furniture Kit by Kenney (kenney.nl)
 
 ## CC-BY 3.0 (via poly.pizza)
 - airliner.glb: "Airplane" by Poly by Google (poly.pizza/m/a3XrQkLNna9)
