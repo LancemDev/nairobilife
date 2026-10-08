@@ -58,3 +58,17 @@ ugali sukuma, pilau, Eastleigh shawarma / camel / spiced tea.
 - Verbs: *omoka* (make it big), *shera* (dance), *banja* (talk), *gwaya* (be scared), *ngasha* (shower), *malo* (eat), *chai* (steal)
 - Police: *karao / sanse / hessy*, *kanjo* (city council askaris)
 - Vibes: *kiki* (clout), *imbo* (fake), *noma* (intense), *wueh* (exclamation), *niko kadi* (I'm set)
+
+## Nganyas by route (researched 2026-10-08)
+| Route | Nganyas | Look |
+|---|---|---|
+| Rongai (Route 125, Green Park terminus) | Baba Yaga, Detroit, Catalyst, Matrix (Damager), Batman, Mood, MoneyFest | Baba Yaga: dark and cream, John Wick theme, menacing front, custom lights. Detroit: Detroit Lions blue and white, 2025 Nganya Awards "Makeover of the Year" |
+| Ngong Rd (111) | MoneyFest | Dollar-sign branding |
+| Umoja (35) / Eastlands | Opposite, Bapesta | Opposite: red and white, often called Kenya's top nganya |
+| Thika Rd / Githurai (45) | Bumblebee, Boombox | Bumblebee: yellow and black |
+| Mood (George Ruto-linked) | Mood | Fully wrapped in graffiti (even the windows), LED bar and strobes, bucket racing seats in matching colours, a 65" front TV plus many 24" screens, subwoofers under the rear seats, DJ controller by the driver |
+
+Interiors in general: bucket seats, screens, music-synced LEDs, subwoofers, Wi-Fi, sometimes game stations.
+Artists use airbrush plus NC/Duco paint; themes are celebrities, films, musicians, religion and trending topics.
+**2026 caveat:** a High Court ruling upheld a ban on matatu graffiti and tinted windows; MP Jalang'o is challenging it.
+Sources: monolithafrica.com (nganya guides), Nation Africa (artists, court ban), The Standard (Mood interior), Breaking Kenya News, Parents Africa, Magaripoa.

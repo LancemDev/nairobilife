@@ -345,9 +345,7 @@ function Player({ kind, look, carColor }: { kind: RideKind; look?: Partial<Look>
   return (
     <group ref={g} position={[laneOf(kind), kind === "walk" ? 0.3 : 0, 0]}>
       {kind === "walk" ? (
-        <group rotation={[0, Math.PI, 0]}>
-          <Character look={look} start={[0, 0]} target={[0, -1000]} />
-        </group>
+        <Character look={look} start={[0, 0]} pose="walk" poseAt={{ x: 0, z: 0, rot: Math.PI, y: 0 }} />
       ) : kind === "boda" ? (
         <>
           <Vehicle kind="boda" color="#c8102e" />

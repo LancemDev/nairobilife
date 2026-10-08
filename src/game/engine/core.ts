@@ -21,6 +21,7 @@ import {
   VENUE,
   WISH,
   WISHES,
+  GATE_CLOSES,
 } from "../data";
 import { NEED_KEYS, type Choice, type Effect, type EventContext, type GameState, type LogEntry, type NeedKey, type Rng, type SkillKey, type Hours } from "../types";
 
@@ -232,6 +233,10 @@ export function advance(s: GameState, minutes: number, rng: Rng, asleep = false)
     if (dayOf(s.time) !== prevDay) onNewDay(s, rng);
   }
   s.moodlets = s.moodlets.filter((m) => m.until > s.time);
+  if (s.flight && s.time > s.flight.dep - GATE_CLOSES) {
+    log(s, `🛫 Flight ${s.flight.code} left without you. Your ticket is gone.`, "bad");
+    s.flight = null;
+  }
 }
 
 function rollWishes(s: GameState, rng: Rng) {

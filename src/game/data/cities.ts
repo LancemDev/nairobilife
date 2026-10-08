@@ -6,7 +6,6 @@ export const CITY_AREAS: Area[] = [
   { id: "kisumu", city: "kisumu", name: "Kisumu", emoji: "🐟", x: 0, y: 0, blurb: "Lakeside city: fresh tilapia, rhumba nights, hippos at Dunga.", vibe: "Ber ahinya! Samaki ni ya leo." },
 ];
 
-const fly = (id: string, label: string, cost: number, goTo: string, text: string) => ({ id, label, emoji: "✈️", minutes: 150, cost, goTo, needs: { energy: -8, fun: 8 }, moodlet: "jetSetter", tags: ["travel"], text });
 
 export const CITY_VENUES: Venue[] = [
   // Nairobi departures
@@ -20,7 +19,14 @@ export const CITY_VENUES: Venue[] = [
   // Mombasa
   {
     id: "moiAirport", area: "mombasa", name: "Moi International Airport", emoji: "🛫", blurb: "Hot, humid, and the start of every coast holiday.",
-    actions: [{ id: "toilet", label: "Use the washroom", emoji: "🚻", minutes: 10, needs: { bladder: 100 }, text: "Relief." }, fly("flyMbsNbo", "Fly back to Nairobi", 7500, "jkia", "An hour up, and you can already feel the Nairobi cold.")],
+    actions: [
+      { id: "toilet", label: "Use the washroom", emoji: "🚻", minutes: 10, needs: { bladder: 100 }, text: "Relief." },
+      { id: "cafe", label: "Kahawa & mahamri at the café", emoji: "☕", minutes: 30, cost: 450, needs: { hunger: 20, energy: 10 }, tags: ["eat"], text: "Spiced coffee and warm mahamri. The coast starts here." },
+      { id: "foodCourt", label: "Biriani at the food court", emoji: "🍛", minutes: 45, cost: 1200, needs: { hunger: 60, fun: 8 }, tags: ["eat"], text: "Airport biriani. Not as good as Old Town, but close." },
+      { id: "madafu", label: "Madafu from the kiosk", emoji: "🥥", minutes: 15, cost: 200, needs: { hunger: 8, fun: 6 }, tags: ["eat", "street"], text: "Cold coconut water. Exactly what the humidity ordered." },
+      { id: "dutyFree", label: "Browse the curio shop", emoji: "🛍️", minutes: 30, needs: { fun: 8 }, tags: ["shop"], text: "Kikoys, kangas, carved dhows and Mombasa magnets." },
+      { id: "chargePhone", label: "Charge your phone at the gate", emoji: "🔌", minutes: 30, needs: { fun: 3 }, text: "The AC is on full. You don't want to leave." },
+    ],
   },
   {
     id: "sgrMombasa", area: "mombasa", name: "SGR Mombasa Terminus", emoji: "🚆", blurb: "Miritini station, the end of the line.",
@@ -59,7 +65,13 @@ export const CITY_VENUES: Venue[] = [
   // Kisumu
   {
     id: "kisumuAirport", area: "kisumu", name: "Kisumu International Airport", emoji: "🛫", blurb: "Small airport, big welcome.",
-    actions: [{ id: "toilet", label: "Use the washroom", emoji: "🚻", minutes: 10, needs: { bladder: 100 }, text: "Relief." }, fly("flyKsmNbo", "Fly back to Nairobi", 6500, "jkia", "Forty-five minutes over the Rift Valley.")],
+    actions: [
+      { id: "toilet", label: "Use the washroom", emoji: "🚻", minutes: 10, needs: { bladder: 100 }, text: "Relief." },
+      { id: "cafe", label: "Chai & samosa at the café", emoji: "☕", minutes: 30, cost: 350, needs: { hunger: 15, energy: 8 }, tags: ["eat"], text: "Small café, big samosas." },
+      { id: "foodCourt", label: "Fish fillet & chips at the restaurant", emoji: "🐟", minutes: 45, cost: 1000, needs: { hunger: 55, fun: 8 }, tags: ["eat"], text: "Lake Victoria tilapia, even at the airport." },
+      { id: "planeSpot", label: "Watch the lake from the terrace", emoji: "🌅", minutes: 45, needs: { fun: 14 }, skills: { photography: 1 }, tags: ["nature"], text: "Planes land over Lake Victoria in the golden light." },
+      { id: "chargePhone", label: "Charge your phone at the gate", emoji: "🔌", minutes: 30, needs: { fun: 3 }, text: "Quiet terminal, free sockets. Bliss." },
+    ],
   },
   {
     id: "dunga", area: "kisumu", name: "Dunga Beach", emoji: "🐟", blurb: "Fishing boats, hippos and the freshest tilapia in Kenya.",

@@ -45,6 +45,8 @@ import {
   type Done,
 } from "./core";
 
+import { airportActions } from "./flights";
+
 export type ActionImpl = ActionView & { run: (s: GameState, rng: Rng) => Done | void };
 
 const fmtHour = (h: number) => `${h}:00`;
@@ -522,6 +524,7 @@ export function actionsFor(s: GameState): ActionImpl[] {
   if (s.location === "uon") list.push(...campusActions(s));
   if (s.location === "knh") list.push(...hospitalActions(s));
   if (s.location === "kicc") list.push(...politicsActions(s));
+  list.push(...airportActions(s));
   return list;
 }
 

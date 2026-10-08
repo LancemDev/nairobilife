@@ -125,6 +125,7 @@ export const MOODLETS: Moodlet[] = [
   { id: "drip", label: "Luku Iko Sawa", emoji: "🧥", mood: 8, hours: 8 },
   { id: "homeCooked", label: "Home Cooked", emoji: "🍲", mood: 6, hours: 4 },
   { id: "wishDone", label: "Wish Granted", emoji: "✨", mood: 6, hours: 4 },
+  { id: "applause", label: "Standing Ovation", emoji: "👏🏾", mood: 14, hours: 8 },
   { id: "jetSetter", label: "Jet Setter", emoji: "✈️", mood: 12, hours: 12 },
   { id: "beach", label: "Beach Vibes", emoji: "🏖️", mood: 15, hours: 8 },
   { id: "dream", label: "Lifetime Dream Achieved", emoji: "🏆", mood: 40, hours: 168 },

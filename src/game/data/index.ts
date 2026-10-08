@@ -10,6 +10,7 @@ export * from "./careers";
 export * from "./character";
 export * from "./economy";
 export * from "./events";
+export * from "./flights";
 export * from "./home";
 export { relLabel, WEDDING_TIERS, RING_COST, DATE_COST, SOCIALS } from "./people";
 export { ESTATES, UNITS } from "./places";

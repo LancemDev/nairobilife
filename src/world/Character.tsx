@@ -8,7 +8,7 @@ import { sanitizeLook, type Look } from "@/game/look";
 const SPEED = 2.4;
 const LONG_SLEEVES = new Set(["hoodie", "shirt", "blazer", "kitenge"]);
 
-export type Pose = "stand" | "sleep" | "sit" | "use";
+export type Pose = "stand" | "sleep" | "sit" | "use" | "walk";
 
 /** Silhouette per body type: radii at hip, waist, chest and shoulder (metres). */
 const BODY: Record<string, { hip: number; waist: number; chest: number; shoulder: number; limb: number }> = {
@@ -84,8 +84,11 @@ export function Character({
       lastTarget.current = key;
       arrived.current = !target;
     }
-    let walking = false;
-    if (pose !== "stand" && poseAt) {
+    let walking = pose === "walk";
+    if (walking) {
+      // Walking in place: the world moves past instead (travel rides).
+      if (poseAt) g.rotation.y = poseAt.rot;
+    } else if (pose !== "stand" && poseAt) {
       // Slide into the bed or seat.
       g.position.x += (poseAt.x - g.position.x) * Math.min(1, dt * 6);
       g.position.z += (poseAt.z - g.position.z) * Math.min(1, dt * 6);

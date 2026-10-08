@@ -492,9 +492,14 @@ export const VENUES: Venue[] = [
     id: "jkia", area: "jkia", name: "JKIA", emoji: "✈️", blurb: "Kenya's gateway to the world.",
     actions: [
       toilet(0),
-      { id: "planeSpot", label: "Watch planes land", emoji: "🛬", minutes: 60, needs: { fun: 12 }, skills: { photography: 1 }, text: "One day you'll be on one of those, going somewhere nice." },
-      { id: "flyMombasa", label: "Fly to Mombasa", emoji: "🏝️", minutes: 150, cost: 7500, goTo: "moiAirport", needs: { energy: -8, fun: 10 }, moodlet: "jetSetter", tags: ["travel"], text: "Check-in, security, an hour in the air. The heat hits you on the stairs." },
-      { id: "flyKisumu", label: "Fly to Kisumu", emoji: "🐟", minutes: 135, cost: 6500, goTo: "kisumuAirport", needs: { energy: -8, fun: 10 }, moodlet: "jetSetter", tags: ["travel"], text: "Over the Rift Valley and down to the lake." },
+      { id: "planeSpot", label: "Watch planes from the viewing deck", emoji: "🛬", minutes: 60, needs: { fun: 12 }, skills: { photography: 1 }, text: "One day you'll be on one of those, going somewhere nice." },
+      { id: "cafe", label: "Coffee & samosa at the café", emoji: "☕", minutes: 30, cost: 650, needs: { hunger: 15, energy: 10, fun: 4 }, tags: ["eat"], text: "Airport prices: KSh 650 for what costs 150 in town. Still, good coffee." },
+      { id: "foodCourt", label: "Pilau & kachumbari at the food court", emoji: "🍛", minutes: 45, cost: 1100, needs: { hunger: 55, fun: 6 }, tags: ["eat"], text: "Pilau, kachumbari and a soda, eaten while you watch the departures board." },
+      { id: "nyamaAirport", label: "Nyama choma at the terminal grill", emoji: "🍖", minutes: 60, cost: 1800, needs: { hunger: 70, fun: 12 }, tags: ["eat", "nyama"], text: "Half a kilo of goat and ugali before take-off. Hakuna matata." },
+      { id: "dutyFree", label: "Browse duty free", emoji: "🛍️", minutes: 30, needs: { fun: 8 }, tags: ["shop"], text: "Perfume testers, Kenyan tea gift boxes and a KSh 40,000 handbag." },
+      { id: "dutyFreeBuy", label: "Buy perfume at duty free", emoji: "🧴", minutes: 20, cost: 6500, needs: { fun: 22 }, moodlet: "fresh", tags: ["shop"], text: "You smell like a first-class ticket." },
+      { id: "piano", label: "Play the terminal piano", emoji: "🎹", minutes: 30, needs: { fun: 18, social: 10 }, skills: { music: 2 }, tags: ["music"], rolls: [{ chance: 0.12, skill: "music", text: "A crowd gathers and films you. A tourist tips you KSh 1,000.", money: 1000, moodlet: "applause" }, { chance: 0.25, text: "A kid sits next to you and bangs out chopsticks. Duet!" }], text: "Travellers slow down with their trolleys to listen." },
+      { id: "chargePhone", label: "Charge your phone at the gate", emoji: "🔌", minutes: 30, needs: { fun: 3 }, text: "Every socket has a queue. You find one behind a pillar." },
     ],
   },
 

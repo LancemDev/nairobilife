@@ -46,6 +46,12 @@ function poseFor(p: Prop): { pose: Pose; at: { x: number; z: number; rot: number
       return { pose: "sit", at: { ...local(p, -0.35, 0.05), rot: p.rot, y: 0.48 } };
     case "pews":
       return { pose: "sit", at: { ...local(p, 0, 0.1), rot: p.rot, y: 0.48 } };
+    case "seats":
+      return { pose: "sit", at: { ...local(p, 0.25, 0.05), rot: p.rot, y: 0.45 } };
+    case "lounge":
+      return { pose: "sit", at: { ...local(p, -0.8, 0.05), rot: p.rot, y: 0.5 } };
+    case "piano":
+      return { pose: "sit", at: { ...local(p, 0, 1.0), rot: p.rot + Math.PI, y: 0.49 } };
     case "table":
       return { pose: "sit", at: { ...local(p, -0.85, 0), rot: p.rot + Math.PI / 2, y: 0.48 } };
     case "desk":
@@ -92,6 +98,8 @@ export default function World(props: WorldProps) {
   const room = useMemo(() => buildRoom(s), [s]);
   const [hover, setHover] = useState<string | null>(null);
   const anchors = useRef(new Map<string, Anchor>());
+  // Lets a tapped label walk you to its prop, same as tapping the prop itself.
+  const goRef = useRef<((p: Prop) => void) | null>(null);
 
   const people: Person[] = useMemo(() => {
     const list: Omit<Person, "spot">[] = [
@@ -106,10 +114,10 @@ export default function World(props: WorldProps) {
     map.set(key, { ...map.get(key), ...patch });
   }, []);
 
-  const labels: { key: string; text: string; kind: keyof typeof LABEL_STYLE; pos?: [number, number, number] }[] = [
+  const labels: { key: string; text: string; kind: keyof typeof LABEL_STYLE; pos?: [number, number, number]; tap?: () => void }[] = [
     ...(room.sign ? [{ key: "sign", text: room.sign, kind: "sign" as const, pos: [0, WALL_H + 0.35, -room.d / 2] as [number, number, number] }] : []),
-    ...room.props.filter((p) => p.actions.length).map((p) => ({ key: `prop:${p.id}`, text: p.label, kind: hover === p.id || selected === p.id ? ("lit" as const) : ("prop" as const), pos: [p.x, 1.7, p.z] as [number, number, number] })),
-    ...people.map((p) => ({ key: p.key, text: p.label, kind: p.kind })),
+    ...room.props.filter((p) => p.actions.length).map((p) => ({ key: `prop:${p.id}`, text: p.label, kind: hover === p.id || selected === p.id ? ("lit" as const) : ("prop" as const), pos: [p.x, 1.7, p.z] as [number, number, number], tap: () => goRef.current?.(p) })),
+    ...people.map((p) => ({ key: p.key, text: p.label, kind: p.kind, tap: () => (p.kind === "npc" ? props.onNpc(p.key.split(":")[1]) : props.onPlayer(p.key.split(":")[1])) })),
     { key: "you", text: s.player.name, kind: "you" as const },
   ];
 
@@ -120,7 +128,7 @@ export default function World(props: WorldProps) {
         <hemisphereLight args={["#ffffff", "#8fb37a", 0.9]} />
         <directionalLight position={[8, 14, 6]} intensity={1.6} castShadow shadow-mapSize={[1024, 1024]} shadow-camera-left={-12} shadow-camera-right={12} shadow-camera-top={12} shadow-camera-bottom={-12} />
         {/* Remount per room so the player starts at the door of each new place. */}
-        <Scene key={room.key} room={room} people={people} hover={hover} setHover={setHover} anchor={anchor} {...props} />
+        <Scene key={room.key} room={room} people={people} hover={hover} setHover={setHover} anchor={anchor} goRef={goRef} {...props} />
         <Projector anchors={anchors} />
         {props.showcase ? (
           <OrbitControls makeDefault enabled={false} autoRotate autoRotateSpeed={0.5} />
@@ -134,7 +142,8 @@ export default function World(props: WorldProps) {
           <span
             key={l.key}
             ref={(el) => anchor(l.key, l.pos ? { el, pos: l.pos } : { el })}
-            className={`absolute left-0 top-0 whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold shadow will-change-transform ${LABEL_STYLE[l.kind]}`}
+            onClick={l.tap}
+            className={`absolute left-0 top-0 whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold shadow will-change-transform ${l.tap ? "pointer-events-auto cursor-pointer" : ""} ${LABEL_STYLE[l.kind]}`}
             style={{ transform: "translate(-9999px, 0)" }}
           >
             {l.text}
@@ -179,7 +188,8 @@ function Scene({
   onSelect,
   onNpc,
   onPlayer,
-}: WorldProps & { room: Room; people: Person[]; hover: string | null; setHover: (id: string | null) => void; anchor: (key: string, patch: Partial<Anchor>) => void }) {
+  goRef,
+}: WorldProps & { room: Room; people: Person[]; hover: string | null; setHover: (id: string | null) => void; anchor: (key: string, patch: Partial<Anchor>) => void; goRef: React.RefObject<((p: Prop) => void) | null> }) {
   const [target, setTarget] = useState<[number, number] | null>(null);
   const [heading, setHeading] = useState<Prop | null>(null);
   const posing = busyProp ? poseFor(busyProp) : null;
@@ -198,6 +208,9 @@ function Scene({
     setHeading(prop);
     setTarget(spot);
   };
+  useEffect(() => {
+    goRef.current = busy ? null : (p) => walkTo(standSpot(p), p);
+  });
 
   const floorClick = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();

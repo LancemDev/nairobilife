@@ -401,6 +401,8 @@ export interface GameState {
   campaign: { office: string; spent: number } | null;
   voter: boolean;
   insured: boolean;
+  /** A booked flight: your boarding pass. Undefined on older saves. */
+  flight?: { from: string; to: "nairobi" | "mombasa" | "kisumu"; dep: number; air: number; code: string; airline: string; gate: number; cabin: "economy" | "business"; fare: number } | null;
   lastBet: { kind: "crash" | "derby"; stake: number; target: number; result: number; label: string; won: boolean; payout: number; at: number } | null;
   today: { day: number; earned: number; socials: number };
   event: PendingEvent | null;

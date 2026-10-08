@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 
-export type Overlay = "map" | "phone" | "buy" | null;
+export type Overlay = "map" | "phone" | "buy" | "departures" | null;
 export type PhoneApp = "messages" | "contacts" | "watu" | "profile" | "houses" | "mpesa" | "benki" | "chakula" | "kazi" | "mali" | "ndege" | "siasa" | "gist";
 
 export interface Ride {

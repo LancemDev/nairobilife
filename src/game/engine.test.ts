@@ -2,8 +2,10 @@ import { describe, expect, test } from "bun:test";
 import { CAREERS, ESTATES, EVENTS, NPCS, OBJECTS, RECIPES, VENUES, WISHES } from "./data";
 import {
   availableActions,
+  canBook,
   crashPoint,
   dayOf,
+  departures,
   dispatch,
   fulizaLimit,
   newGame,
@@ -214,14 +216,33 @@ describe("fuzz", () => {
 });
 
 describe("other cities", () => {
-  test("fly to Mombasa from JKIA; matatus can't take you back", () => {
+  test("book a flight on the departures board, board at the gate, land in Mombasa", () => {
     let s = at(newGame(life, never), { location: "jkia", money: 20000 });
-    s = send(s, { type: "act", id: "flyMombasa" });
+    const f = departures(s).find((d) => d.to === "mombasa" && canBook(d))!;
+    expect(f).toBeDefined();
+    s = send(s, { type: "bookFlight", code: f.code, dep: f.dep, cabin: "economy" });
+    expect(s.flight?.code).toBe(f.code);
+    expect(s.money).toBe(20000 - f.fares.economy);
+    // Can't double-book.
+    expect(send(s, { type: "bookFlight", code: f.code, dep: f.dep, cabin: "economy" })).toBe(s);
+    if (availableActions(s).some((a) => a.id === "waitGate")) s = send(s, { type: "act", id: "waitGate" });
+    s = send(s, { type: "act", id: "board" });
     expect(s.location).toBe("moiAirport");
+    expect(s.flight).toBeNull();
+    expect(s.time).toBe(f.dep + f.air);
     expect(quote(s, "kencom", "matatu").blocked).toBeDefined();
     expect(send(s, { type: "travel", dest: "kencom", mode: "matatu" })).toBe(s);
     const local = send(s, { type: "travel", dest: "pirates", mode: "matatu" });
     expect(local.location).toBe("pirates");
+  });
+
+  test("missing your flight loses the ticket", () => {
+    let s = at(newGame(life, never), { location: "jkia", money: 20000 });
+    const f = departures(s).find(canBook)!;
+    s = send(s, { type: "bookFlight", code: f.code, dep: f.dep, cabin: "business" });
+    while (s.flight) s = send(s, { type: "act", id: "planeSpot" });
+    expect(s.location).toBe("jkia");
+    expect(s.log.some((l) => l.text.includes("left without you"))).toBe(true);
   });
 
   test("a broke player can always get home", () => {

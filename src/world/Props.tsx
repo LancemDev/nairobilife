@@ -515,6 +515,74 @@ export function PropModel({ kind, accent }: { kind: PropKind; accent: string }):
           <Box p={[0, 0.22, 0]} s={[2, 0.05, 0.1]} c={METAL} />
         </group>
       );
+    case "piano":
+      // A black grand piano with its lid propped open and a bench in front.
+      return (
+        <group>
+          <Box p={[0, 0.78, -0.25]} s={[1.5, 0.3, 1.4]} c="#0a0a0a" />
+          <Box p={[0.2, 0.78, -1.05]} s={[1.0, 0.3, 0.5]} c="#0a0a0a" />
+          <Box p={[0, 1.25, -0.45]} s={[1.4, 0.04, 1.3]} c="#111" r={[-0.5, 0, 0]} />
+          <Box p={[0, 0.94, 0.38]} s={[1.3, 0.04, 0.18]} c={WHITE} />
+          {Array.from({ length: 9 }, (_, i) => (
+            <Box key={i} p={[-0.56 + i * 0.14, 0.97, 0.34]} s={[0.05, 0.03, 0.09]} c="#0a0a0a" />
+          ))}
+          {[[-0.6, 0.2], [0.6, 0.2], [0.1, -1.1]].map(([x, z]) => (
+            <Box key={`${x}${z}`} p={[x, 0.32, z]} s={[0.1, 0.64, 0.1]} c="#0a0a0a" />
+          ))}
+          <Box p={[0, 0.45, 0.95]} s={[0.9, 0.08, 0.35]} c="#0a0a0a" />
+          <Box p={[0, 0.22, 0.95]} s={[0.8, 0.44, 0.25]} c="#1f1f1f" />
+        </group>
+      );
+    case "window":
+      // Floor-to-ceiling glass looking out on the apron, with a plane parked outside.
+      return (
+        <group>
+          <Box p={[0, 1.4, 0]} s={[3, 2.8, 0.05]} c="#bae6fd" e="#7dd3fc" />
+          {[-1.5, -0.5, 0.5, 1.5].map((x) => (
+            <Box key={x} p={[x, 1.4, 0.03]} s={[0.06, 2.8, 0.06]} c={METAL} />
+          ))}
+          <Box p={[0, 0.9, 0.04]} s={[3, 0.05, 0.05]} c={METAL} />
+          <Box p={[0, 0.85, 0.06]} s={[1.6, 0.25, 0.04]} c="#f5f5f4" />
+          <Box p={[0.3, 0.98, 0.06]} s={[2.4, 0.05, 0.02]} c="#e5e7eb" />
+          <Box p={[-0.6, 1.08, 0.06]} s={[0.06, 0.3, 0.02]} c="#c8102e" />
+          <Box p={[0, 0.5, 0.6]} s={[2, 0.08, 0.3]} c="#334155" />
+        </group>
+      );
+    case "lounge":
+      // Armchairs round a low table, a lamp and a side bar.
+      return (
+        <group>
+          {[-0.8, 0.8].map((x) => (
+            <group key={x} position={[x, 0, 0]}>
+              <Box p={[0, 0.25, 0]} s={[0.9, 0.5, 0.85]} c={accent} />
+              <Box p={[0, 0.65, -0.35]} s={[0.9, 0.6, 0.18]} c={accent} />
+              <Box p={[-0.4, 0.45, 0]} s={[0.12, 0.35, 0.85]} c={accent} />
+              <Box p={[0.4, 0.45, 0]} s={[0.12, 0.35, 0.85]} c={accent} />
+            </group>
+          ))}
+          <Box p={[0, 0.25, 0.85]} s={[1.1, 0.06, 0.6]} c={WOOD} />
+          <Box p={[0, 0.12, 0.85]} s={[0.1, 0.24, 0.1]} c={DARK} />
+          <Box p={[0.05, 0.33, 0.85]} s={[0.12, 0.12, 0.12]} c={WHITE} />
+          <Box p={[1.5, 0.75, -0.2]} s={[0.05, 1.5, 0.05]} c={METAL} />
+          <Box p={[1.5, 1.55, -0.2]} s={[0.35, 0.25, 0.35]} c="#fde68a" e="#fbbf24" />
+        </group>
+      );
+    case "dutyFree":
+      // Glass shelves of perfume bottles and gift boxes.
+      return (
+        <group>
+          <Box p={[0, 0.9, -0.1]} s={[2.2, 1.8, 0.5]} c="#f8fafc" />
+          {[0.5, 1.0, 1.5].map((y, i) => (
+            <group key={y}>
+              <Box p={[0, y, 0.16]} s={[2.1, 0.03, 0.05]} c={METAL} />
+              {[-0.8, -0.4, 0, 0.4, 0.8].map((x, k) => (
+                <Box key={x} p={[x, y + 0.12, 0.1]} s={[0.12, 0.22, 0.12]} c={["#c084fc", "#f472b6", "#fbbf24", "#34d399", "#60a5fa"][(i + k) % 5]} />
+              ))}
+            </group>
+          ))}
+          <Box p={[0, 1.95, 0.15]} s={[1.4, 0.25, 0.04]} c="#1d4ed8" />
+        </group>
+      );
     case "departures":
       return (
         <group>

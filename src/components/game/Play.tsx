@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AREA, GOALS, NPC, WISH } from "@/game/data";
+import { AREA, CITY_NAME, GOALS, NPC, WISH } from "@/game/data";
 import { activeMoodlets, canChoose, clock, dayOf, groceryChannels, hourOf, isBlackout, isRushHour, isWaterCut, mood, npcsHere, placeOf, sickness, weekdayOf } from "@/game/engine";
 import { splitIcon } from "@/game/icons";
 import { useGame } from "@/game/store";
@@ -19,6 +19,7 @@ import { Icon } from "./Icon";
 import MapScreen from "./MapScreen";
 import { PlayerSheet } from "./Online";
 import PhoneOverlay from "./Phone";
+import DeparturesBoard from "./Departures";
 import RideOverlay from "./RideOverlay";
 import { duration, ksh } from "./ui";
 import { useUi, type Overlay } from "./uiStore";
@@ -80,10 +81,18 @@ export default function Play() {
     if (!a || a.disabled || busy) return;
     const used = prop!;
     setProp(null);
+    if (id === "departures") {
+      open("departures");
+      return;
+    }
     // Flights, the SGR and long-distance buses play as a ride before you arrive.
-    const trip = /^fly/.test(id) ? "plane" : /^sgr/.test(id) ? "train" : /^(busBack|lorry)$/.test(id) ? "matatu" : null;
+    if (id === "board" && game.flight) {
+      startRide({ kind: "plane", title: `${game.flight.airline} ${game.flight.code}`, from: place.name, to: CITY_NAME[game.flight.to], minutes: game.flight.air, finish: { type: "act", id } });
+      return;
+    }
+    const trip = /^sgr/.test(id) ? "train" : /^(busBack|lorry)$/.test(id) ? "matatu" : null;
     if (trip) {
-      startRide({ kind: trip, title: a.label, from: place.name, to: a.label.replace(/^(Fly to|Fly back to|Madaraka Express to|Night bus to|Hitch a lorry to)\s*/i, "").replace(/\s*\(.*\)$/, ""), minutes: a.minutes, finish: { type: "act", id } });
+      startRide({ kind: trip, title: a.label, from: place.name, to: a.label.replace(/^(Madaraka Express to|Night bus to|Hitch a lorry to)\s*/i, "").replace(/\s*\(.*\)$/, ""), minutes: a.minutes, finish: { type: "act", id } });
       return;
     }
     setBusy({ label: a.label, icon: a.emoji, minutes: a.minutes, prop: used });
@@ -105,7 +114,7 @@ export default function Play() {
   return (
     <main className="fixed inset-0 overflow-hidden bg-[#bfe0f7] text-foreground">
       {/* The room unmounts under the full-screen map so only one 3D scene runs at a time. */}
-      {overlay !== "map" && !ride && <World s={game} busy={!!busy} busyProp={busy?.prop ?? null} others={others} selected={prop?.id ?? null} onSelect={setProp} onNpc={setNpc} onPlayer={view} />}
+      {overlay !== "map" && !ride && <World s={game} busy={!!busy} busyProp={busy?.prop ?? null} others={others} selected={prop?.id ?? null} onSelect={(p) => (p?.kind === "departures" && p.actions.some((a) => a.id === "departures") ? (setProp(null), open("departures")) : setProp(p))} onNpc={setNpc} onPlayer={view} />}
       {overlay === "map" && <MapScreen s={game} />}
 
       {!clean && (
@@ -161,6 +170,7 @@ export default function Play() {
       </div>
 
       {overlay === "phone" && <PhoneOverlay s={game} />}
+      {overlay === "departures" && <DeparturesBoard s={game} />}
       {ride && <RideOverlay />}
       {npc && <SocialSheet s={game} npc={npc} onClose={() => setNpc(null)} />}
       {game.event && <EventModal s={game} />}

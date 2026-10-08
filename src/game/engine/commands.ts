@@ -55,6 +55,7 @@ import {
   hasReward,
   mood,
 } from "./core";
+import { bookFlight, cancelFlight } from "./flights";
 import { travel } from "./travel";
 
 export type GroceryChannel = "mamaMboga" | "supermarket" | "delivery";
@@ -89,6 +90,8 @@ export type Command =
   | { type: "derby"; stake: number; pick: keyof typeof DERBY_ODDS }
   | { type: "policy"; id: string }
   | { type: "reward"; id: string }
+  | { type: "bookFlight"; code: string; dep: number; cabin: "economy" | "business" }
+  | { type: "cancelFlight" }
   /** Online M-Pesa: the server has already accepted these. */
   | { type: "transferOut"; to: string; amount: number }
   | { type: "transferIn"; from: string; amount: number; note: string }
@@ -252,6 +255,10 @@ function choose(state: GameState, index: number, rng: Rng) {
 /** Mutates the draft; returns false when the command isn't allowed. */
 function run(s: GameState, cmd: Exclude<Command, { type: "act" | "travel" | "choose" | "transferOut" | "transferIn" | "setLook" }>, rng: Rng): boolean {
   switch (cmd.type) {
+    case "bookFlight":
+      return bookFlight(s, cmd.code, cmd.dep, cmd.cabin);
+    case "cancelFlight":
+      return cancelFlight(s);
     case "playerSocial": {
       const gain = { hello: { social: 8 }, gist: { social: 15, fun: 5 }, joke: { social: 12, fun: 10 }, shade: { social: 4, fun: 10 } }[cmd.social];
       advance(s, 10, rng);

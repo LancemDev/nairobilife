@@ -9,7 +9,8 @@ export type PropKind =
   | "plant" | "art" | "lamp" | "generator" | "solar" | "tank" | "chairs" | "door"
   | "stall" | "grill" | "table" | "counter" | "dancefloor" | "dj" | "screen" | "trees" | "board" | "podium"
   | "hospitalBed" | "checkin" | "matatu" | "motorbike" | "pews" | "mic" | "washroom" | "alley" | "goal" | "kiosk" | "pool"
-  | "rug" | "bench" | "palm" | "seats" | "departures" | "luggage" | "train" | "speakers" | "crates";
+  | "rug" | "bench" | "palm" | "seats" | "departures" | "luggage" | "train" | "speakers" | "crates"
+  | "piano" | "window" | "lounge" | "dutyFree";
 
 export interface Prop {
   id: string;
@@ -86,7 +87,6 @@ const STAGES = new Set(["kencom", "rongaiStage", "nganyaStage"]);
 function scenery(venue: string, w: number, d: number): Deco[] {
   if (AIRPORTS.has(venue))
     return [
-      { kind: "departures", x: -w / 2 + 0.2, z: -d / 4, rot: Math.PI / 2 },
       { kind: "seats", x: -1.6, z: 1.2 },
       { kind: "seats", x: 1.6, z: 1.2 },
       { kind: "seats", x: -1.6, z: 2.6 },
@@ -127,9 +127,28 @@ function scenery(venue: string, w: number, d: number): Deco[] {
   ];
 }
 
+/** Airport actions: which piece of the terminal each one belongs to, and its sign. */
+const AIRPORT_PROP: Record<string, [PropKind, string]> = {
+  departures: ["departures", "Departures"],
+  loungeChill: ["lounge", "Lounge"],
+  loungeBuffet: ["lounge", "Lounge"],
+  cafe: ["counter", "Café"],
+  foodCourt: ["table", "Food court"],
+  nyamaAirport: ["table", "Food court"],
+  madafu: ["kiosk", "Madafu kiosk"],
+  dutyFree: ["dutyFree", "Duty free"],
+  dutyFreeBuy: ["dutyFree", "Duty free"],
+  piano: ["piano", "Piano"],
+  planeSpot: ["window", "Viewing deck"],
+  chargePhone: ["seats", "Gate"],
+  waitGate: ["seats", "Gate"],
+  board: ["seats", "Gate"],
+};
+
 /** Which prop a venue action lives on. */
-function venueKind(a: ActionView, tags: string[]): PropKind {
+function venueKind(a: ActionView, tags: string[], venue: string): PropKind {
   const id = a.id;
+  if (AIRPORTS.has(venue) && AIRPORT_PROP[id]) return AIRPORT_PROP[id][0];
   if (id === "toilet") return "washroom";
   if (id.startsWith("work:") || id.startsWith("apply:")) return CAREER_PROP[id.split(":")[1]] ?? "desk";
   if (id.startsWith("enrol:") || id === "lecture" || id === "comrades") return "board";
@@ -237,10 +256,12 @@ export function buildRoom(s: GameState): Room {
   const venue = VENUE[s.location];
   const groups = new Map<string, Omit<Prop, "x" | "z" | "rot">>();
   for (const a of actions) {
-    const kind = venueKind(a, tagsOf(s.location, a.id));
-    const travel = kind === "checkin" || kind === "train" || (kind === "matatu" && /busBack|lorry/.test(a.id));
+    const kind = venueKind(a, tagsOf(s.location, a.id), s.location);
+    const travel = kind === "train" || (kind === "matatu" && /busBack|lorry/.test(a.id));
     const key = a.id.startsWith("work:") || a.id.startsWith("apply:") ? `${kind}-${a.id.split(":")[1]}` : travel ? `${kind}-${a.id}` : kind;
-    const g = groups.get(key) ?? { id: key, kind, label: travel ? a.label.replace(/ \(.*\)$/, "") : (KIND_LABEL[kind] ?? kind), actions: [] };
+    const airport = AIRPORTS.has(s.location) ? AIRPORT_PROP[a.id]?.[1] : undefined;
+    const gate = kind === "seats" && s.flight?.from === s.location ? `Gate ${s.flight.gate}` : undefined;
+    const g = groups.get(key) ?? { id: key, kind, label: gate ?? airport ?? (travel ? a.label.replace(/ \(.*\)$/, "") : (KIND_LABEL[kind] ?? kind)), actions: [] };
     if (a.id.startsWith("work:") || a.id.startsWith("apply:")) g.label = CAREERS.find((c) => c.id === a.id.split(":")[1])?.name ?? g.label;
     g.actions.push(a);
     groups.set(key, g);

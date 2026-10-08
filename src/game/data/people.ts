@@ -15,6 +15,10 @@ export const NPCS: Npc[] = [
   { id: "kamau", name: "Kamau", emoji: "🧺", age: 38, venue: "gikomba", hours: [5, 18], bio: "Mitumba bale king. Can spot a designer label from across the market.", line: "\"Chagua chagua! Mia mia!\"" },
   { id: "brayo", name: "Brayo", emoji: "🕺🏾", age: 20, venue: "nganyaStage", hours: [12, 22], bio: "Gen Z, nganya fanatic, does every dance challenge.", line: "\"Wueh! Uliona hii nganya mpya?\"" },
   { id: "aisha", name: "Aisha", emoji: "🧕🏽", age: 28, venue: "southJoints", hours: [17, 23], bio: "South C girl. Knows the best biryani and the best gossip.", line: "\"You've not had biryani until you've had my aunt's.\"" },
+  { id: "wairimu", name: "Wairimu", emoji: "👩🏾‍✈️", age: 29, venue: "jkia", hours: [5, 23], bio: "Twiga Air cabin crew. Has seen every kind of passenger.", line: "\"Seatbelts, phones on flight mode, and no, you can't sit in business.\"" },
+  { id: "hassan", name: "Hassan", emoji: "🧳", age: 41, venue: "jkia", hours: [6, 22], bio: "Mombasa businessman. Flies twice a week and knows every lounge.", line: "\"Wee, Nairobi traffic! Si bora tu nipande ndege.\"" },
+  { id: "mwanaisha", name: "Mwanaisha", emoji: "🧕🏾", age: 31, venue: "moiAirport", hours: [7, 22], bio: "Tour guide who meets every flight with a sign and a smile.", line: "\"Karibu Pwani! Taxi, hotel, Fort Jesus? Niko na kila kitu.\"" },
+  { id: "atieno", name: "Atieno", emoji: "👩🏾", age: 26, venue: "kisumuAirport", hours: [7, 21], bio: "Flying home to Kisumu for her cousin's wedding.", line: "\"Uko na plan ya weekend? Kisumu iko poa sana.\"" },
   { id: "kiprop", name: "Kiprop", emoji: "🏃🏾", age: 25, venue: "karura", hours: [6, 11], bio: "Eldoret-born runner training for the Nairobi Marathon.", line: "\"Twende! Ten more kilometres!\"" },
 ];
 
