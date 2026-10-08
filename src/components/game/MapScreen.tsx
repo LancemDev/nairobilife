@@ -27,6 +27,7 @@ const CITIES: { id: CityId; label: string; icon: string }[] = [
 export default function MapScreen({ s }: { s: GameState }) {
   const send = useGame((st) => st.send);
   const open = useUi((st) => st.open);
+  const startRide = useUi((st) => st.startRide);
   const view = useOnline((st) => st.view);
   const me = useOnline((st) => st.me);
   const here = placeOf(s);
@@ -140,8 +141,11 @@ export default function MapScreen({ s }: { s: GameState }) {
                         key={m.id}
                         disabled={!!s.event || !canAfford(s, q.fare)}
                         onClick={() => {
-                          send({ type: "travel", dest: target.id, mode: m.id });
-                          open(null);
+                          const cmd = { type: "travel" as const, dest: target.id, mode: m.id };
+                          if (q.local) {
+                            send(cmd);
+                            open(null);
+                          } else startRide({ kind: m.id, title: m.label, from: here.name, to: target.name, minutes: q.minutes, finish: cmd });
                         }}
                         className="flex items-center gap-2 rounded-2xl bg-background px-3 py-2 text-left transition enabled:hover:bg-sun/20 disabled:opacity-40"
                       >

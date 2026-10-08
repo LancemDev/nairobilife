@@ -19,6 +19,7 @@ import { Icon } from "./Icon";
 import MapScreen from "./MapScreen";
 import { PlayerSheet } from "./Online";
 import PhoneOverlay from "./Phone";
+import RideOverlay from "./RideOverlay";
 import { duration, ksh } from "./ui";
 import { useUi, type Overlay } from "./uiStore";
 
@@ -48,7 +49,7 @@ export default function Play() {
   const send = useGame((s) => s.send);
   const me = useOnline((s) => s.me);
   const unread = useOnline((s) => s.unread);
-  const { overlay, open, openApp } = useUi();
+  const { overlay, open, openApp, ride, startRide } = useUi();
   useSync();
 
   const [prop, setProp] = useState<Prop | null>(null);
@@ -79,6 +80,12 @@ export default function Play() {
     if (!a || a.disabled || busy) return;
     const used = prop!;
     setProp(null);
+    // Flights, the SGR and long-distance buses play as a ride before you arrive.
+    const trip = /^fly/.test(id) ? "plane" : /^sgr/.test(id) ? "train" : /^(busBack|lorry)$/.test(id) ? "matatu" : null;
+    if (trip) {
+      startRide({ kind: trip, title: a.label, from: place.name, to: a.label.replace(/^(Fly to|Fly back to|Madaraka Express to|Night bus to|Hitch a lorry to)\s*/i, "").replace(/\s*\(.*\)$/, ""), minutes: a.minutes, finish: { type: "act", id } });
+      return;
+    }
     setBusy({ label: a.label, icon: a.emoji, minutes: a.minutes, prop: used });
     // Let the character lie down, sit or get busy for a moment before time jumps forward.
     setTimeout(() => {
@@ -98,7 +105,7 @@ export default function Play() {
   return (
     <main className="fixed inset-0 overflow-hidden bg-[#bfe0f7] text-foreground">
       {/* The room unmounts under the full-screen map so only one 3D scene runs at a time. */}
-      {overlay !== "map" && <World s={game} busy={!!busy} busyProp={busy?.prop ?? null} others={others} selected={prop?.id ?? null} onSelect={setProp} onNpc={setNpc} onPlayer={view} />}
+      {overlay !== "map" && !ride && <World s={game} busy={!!busy} busyProp={busy?.prop ?? null} others={others} selected={prop?.id ?? null} onSelect={setProp} onNpc={setNpc} onPlayer={view} />}
       {overlay === "map" && <MapScreen s={game} />}
 
       {!clean && (
@@ -154,6 +161,7 @@ export default function Play() {
       </div>
 
       {overlay === "phone" && <PhoneOverlay s={game} />}
+      {ride && <RideOverlay />}
       {npc && <SocialSheet s={game} npc={npc} onClose={() => setNpc(null)} />}
       {game.event && <EventModal s={game} />}
       <PlayerSheet s={game} />
