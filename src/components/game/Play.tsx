@@ -52,7 +52,7 @@ export default function Play() {
   useSync();
 
   const [prop, setProp] = useState<Prop | null>(null);
-  const [busy, setBusy] = useState<{ label: string; icon: string; minutes: number } | null>(null);
+  const [busy, setBusy] = useState<{ label: string; icon: string; minutes: number; prop: Prop } | null>(null);
   const [npc, setNpc] = useState<string | null>(null);
   const [clean, setClean] = useState(false);
   const [hereOpen, setHereOpen] = useState(false);
@@ -77,13 +77,14 @@ export default function Play() {
   const act = (id: string) => {
     const a = prop?.actions.find((x) => x.id === id);
     if (!a || a.disabled || busy) return;
+    const used = prop!;
     setProp(null);
-    setBusy({ label: a.label, icon: a.emoji, minutes: a.minutes });
-    // Let the character "do" the thing for a beat before time jumps forward.
+    setBusy({ label: a.label, icon: a.emoji, minutes: a.minutes, prop: used });
+    // Let the character lie down, sit or get busy for a moment before time jumps forward.
     setTimeout(() => {
       send({ type: "act", id });
       setBusy(null);
-    }, 1100);
+    }, Math.min(3200, 1400 + a.minutes * 4));
   };
 
   const dock = (id: (typeof DOCK)[number]["id"]) => {
@@ -97,7 +98,7 @@ export default function Play() {
   return (
     <main className="fixed inset-0 overflow-hidden bg-[#bfe0f7] text-foreground">
       {/* The room unmounts under the full-screen map so only one 3D scene runs at a time. */}
-      {overlay !== "map" && <World s={game} busy={!!busy} others={others} selected={prop?.id ?? null} onSelect={setProp} onNpc={setNpc} onPlayer={view} />}
+      {overlay !== "map" && <World s={game} busy={!!busy} busyProp={busy?.prop ?? null} others={others} selected={prop?.id ?? null} onSelect={setProp} onNpc={setNpc} onPlayer={view} />}
       {overlay === "map" && <MapScreen s={game} />}
 
       {!clean && (
@@ -325,7 +326,7 @@ function ActionMenu({ prop, onAct, onClose }: { prop: Prop; onAct: (id: string) 
   );
 }
 
-function Busy({ busy }: { busy: { label: string; icon: string; minutes: number } }) {
+function Busy({ busy }: { busy: { label: string; icon: string; minutes: number; prop: Prop } }) {
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-36 flex justify-center px-3">
       <div className="flex w-full max-w-xs items-center gap-3 rounded-2xl bg-foreground/90 p-3 text-background shadow-2xl">
@@ -333,7 +334,7 @@ function Busy({ busy }: { busy: { label: string; icon: string; minutes: number }
         <span className="min-w-0 flex-1">
           <span className="block truncate text-sm font-semibold">{busy.label}</span>
           <span className="mt-1.5 block h-1.5 overflow-hidden rounded-full bg-white/20">
-            <span className="block h-full animate-[grow_1.1s_linear_forwards] rounded-full bg-sun" />
+            <span className="block h-full rounded-full bg-sun" style={{ animation: `grow ${Math.min(3200, 1400 + busy.minutes * 4)}ms linear forwards` }} />
           </span>
         </span>
         <span className="font-mono text-xs opacity-70">{duration(busy.minutes)}</span>

@@ -280,7 +280,7 @@ function Head({ l }: { l: Look }) {
   );
 }
 
-const FULL_PREVIEW = new Set<keyof Look>(["top", "bottom", "shoes"]);
+const FULL_PREVIEW = new Set<keyof Look>(["body", "top", "bottom", "shoes"]);
 
 /** Pick-a-swatch editor for every part of the look. */
 export function AvatarBuilder({ look, onChange }: { look: Look; onChange: (l: Look) => void }) {
@@ -295,7 +295,7 @@ export function AvatarBuilder({ look, onChange }: { look: Look; onChange: (l: Lo
       </div>
     </div>
   );
-  const choice = (k: "hair" | "top" | "bottom" | "shoes" | "extra", label: string) => (
+  const choice = (k: "body" | "hair" | "top" | "bottom" | "shoes" | "extra", label: string) => (
     <div>
       <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted">{label}</div>
       <div className="flex flex-wrap gap-1.5">
@@ -317,6 +317,7 @@ export function AvatarBuilder({ look, onChange }: { look: Look; onChange: (l: Lo
         </button>
       </div>
       <div className="space-y-3">
+        {choice("body", "Body")}
         {color("skin", "Skin")}
         {choice("hair", "Hair")}
         {color("hairColor", "Hair colour")}

@@ -9,7 +9,7 @@ import { npcsHere } from "@/game/engine";
 import { randomLook, type Look } from "@/game/look";
 import type { GameState } from "@/game/types";
 import type { Profile } from "@/online/api";
-import { Character } from "./Character";
+import { Character, type Pose } from "./Character";
 import { buildRoom, type Prop, type Room } from "./layout";
 import { PropModel } from "./Props";
 
@@ -26,6 +26,35 @@ function standSpot(p: Prop): [number, number] {
   return [p.x + Math.sin(p.rot) * 1.4, p.z + Math.cos(p.rot) * 1.4];
 }
 
+/** A point in a prop's own frame, moved into the room. */
+function local(p: Prop, lx: number, lz: number) {
+  const c = Math.cos(p.rot);
+  const sn = Math.sin(p.rot);
+  return { x: p.x + lx * c + lz * sn, z: p.z - lx * sn + lz * c };
+}
+
+/** How the body sits on each kind of furniture while you use it. */
+function poseFor(p: Prop): { pose: Pose; at: { x: number; z: number; rot: number; y: number } } {
+  switch (p.kind) {
+    case "bed":
+      return { pose: "sleep", at: { ...local(p, 0, 0.85), rot: p.rot, y: 0.58 } };
+    case "hospitalBed":
+      return { pose: "sleep", at: { ...local(p, 0, 0.85), rot: p.rot, y: 0.68 } };
+    case "sofa":
+      return { pose: "sit", at: { ...local(p, 0, 0.1), rot: p.rot, y: 0.5 } };
+    case "chairs":
+      return { pose: "sit", at: { ...local(p, -0.35, 0.05), rot: p.rot, y: 0.48 } };
+    case "pews":
+      return { pose: "sit", at: { ...local(p, 0, 0.1), rot: p.rot, y: 0.48 } };
+    case "table":
+      return { pose: "sit", at: { ...local(p, -0.85, 0), rot: p.rot + Math.PI / 2, y: 0.48 } };
+    case "desk":
+      return { pose: "sit", at: { ...local(p, 0, 0.62), rot: p.rot + Math.PI, y: 0.48 } };
+    default:
+      return { pose: "use", at: { ...local(p, 0, 1.0), rot: p.rot + Math.PI, y: 0 } };
+  }
+}
+
 type Person = { key: string; kind: "npc" | "player"; label: string; look: Partial<Look> | null; spot: [number, number] };
 
 /** A label follows either a fixed point or a moving object (characters). */
@@ -38,6 +67,8 @@ interface Anchor {
 export interface WorldProps {
   s: GameState;
   busy: boolean;
+  /** The prop the player is using right now, so they can lie in the bed or sit on the sofa. */
+  busyProp?: Prop | null;
   others: Profile[];
   selected: string | null;
   onSelect: (prop: Prop | null) => void;
@@ -134,6 +165,7 @@ function Scene({
   room,
   s,
   busy,
+  busyProp,
   people,
   hover,
   setHover,
@@ -144,6 +176,16 @@ function Scene({
 }: WorldProps & { room: Room; people: Person[]; hover: string | null; setHover: (id: string | null) => void; anchor: (key: string, patch: Partial<Anchor>) => void }) {
   const [target, setTarget] = useState<[number, number] | null>(null);
   const [heading, setHeading] = useState<Prop | null>(null);
+  const posing = busyProp ? poseFor(busyProp) : null;
+
+  // Getting up: once the action ends, step back out in front of the furniture.
+  const [lastProp, setLastProp] = useState<Prop | null>(null);
+  if (busyProp && busyProp !== lastProp) setLastProp(busyProp);
+  if (!busyProp && lastProp) {
+    const [x, z] = standSpot(lastProp);
+    setLastProp(null);
+    setTarget([x + 0.001, z]);
+  }
 
   const walkTo = (spot: [number, number], prop: Prop | null) => {
     onSelect(null);
@@ -253,6 +295,8 @@ function Scene({
         start={room.entry}
         target={target}
         busy={busy}
+        pose={posing?.pose ?? "stand"}
+        poseAt={posing?.at ?? null}
         anchor={(obj) => anchor("you", { obj })}
         onArrive={() => {
           if (heading) onSelect(heading);
