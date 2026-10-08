@@ -58,6 +58,7 @@ export default function Play() {
   const [npc, setNpc] = useState<string | null>(null);
   const [clean, setClean] = useState(false);
   const [hereOpen, setHereOpen] = useState(false);
+  const [status, setStatus] = useState(false);
   const [others, setOthers] = useState<Profile[]>([]);
   const view = useOnline((s) => s.view);
   const place = placeOf(game);
@@ -120,7 +121,7 @@ export default function Play() {
       {!clean && (
         <>
           <TopBar s={game} />
-          {overlay !== "map" && <LeftStack s={game} onClean={() => setClean(true)} onOpen={() => openApp("profile")} />}
+          {overlay !== "map" && <LeftStack s={game} onClean={() => setClean(true)} onOpen={() => setStatus(!status)} />}
         </>
       )}
       {clean && (
@@ -133,6 +134,7 @@ export default function Play() {
 
       {!overlay && prop && !busy && <ActionMenu prop={prop} onAct={act} onClose={() => setProp(null)} />}
       {busy && <Busy busy={busy} />}
+      {status && !overlay && !clean && <StatusPanel s={game} onClose={() => setStatus(false)} />}
       {!overlay && hereOpen && <HereCard s={game} others={others} onClose={() => setHereOpen(false)} onNpc={setNpc} />}
       {overlay === "buy" && <BuyTray s={game} />}
 
@@ -262,6 +264,92 @@ function TopBar({ s }: { s: GameState }) {
         <span className={`shrink-0 font-mono ${s.money < 0 ? "text-kred" : ""}`}>{ksh(s.money)}</span>
       </div>
     </div>
+  );
+}
+
+const SKILL_ICON: Record<string, string> = { hustle: "cash", tech: "device-laptop", charm: "heart", fitness: "barbell", cooking: "chef-hat", music: "music", dance: "music", comedy: "mood-happy", photography: "camera" };
+const left = (until: number, now: number) => {
+  const m = Math.max(0, until - now);
+  return m >= 60 ? `${Math.round(m / 60)}h` : `${m}m`;
+};
+
+/** Drops down beside the HUD: needs with numbers, mood, moodlets, goals and top skills. Tap outside to close. */
+function StatusPanel({ s, onClose }: { s: GameState; onClose: () => void }) {
+  const m = Math.round(mood(s));
+  const [word, icon, tone] = moodWord(m);
+  const goal = GOALS.find((g) => !s.goalsDone.includes(g.id));
+  const wishes = s.wishes.ids.map((id) => WISH[id]).filter(Boolean);
+  const skills = Object.entries(s.skills).sort((a, b) => b[1] - a[1]).slice(0, 4);
+  return (
+    <>
+      <div className="fixed inset-0 z-30" onClick={onClose} />
+      <div className="absolute left-3 top-16 z-40 max-h-[calc(100dvh-180px)] w-[min(320px,calc(100vw-24px))] overflow-y-auto rounded-3xl bg-white/97 p-4 shadow-2xl sm:left-[15rem] sm:top-3">
+        <div className="flex items-center gap-2">
+          <Icon name={icon} size={26} className={tone} />
+          <div className="flex-1">
+            <div className={`font-display text-lg font-bold leading-tight ${tone}`}>{word}</div>
+            <div className="text-xs text-muted">Mood {m}/100</div>
+          </div>
+          <button onClick={onClose} aria-label="Close" className="grid h-8 w-8 place-items-center rounded-full hover:bg-black/5">
+            <Icon name="x" size={18} />
+          </button>
+        </div>
+        <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2">
+          {NEEDS.map((n) => (
+            <div key={n.key}>
+              <div className="flex items-center gap-1 text-xs">
+                <Icon name={n.icon} size={13} className="text-muted" />
+                <span className="flex-1 font-medium">{n.label}</span>
+                <span className="font-mono text-muted">{Math.round(s.needs[n.key])}</span>
+              </div>
+              <div className="mt-0.5 h-1.5 overflow-hidden rounded-full bg-line">
+                <div className={`h-full rounded-full ${barColor(s.needs[n.key])}`} style={{ width: `${s.needs[n.key]}%` }} />
+              </div>
+            </div>
+          ))}
+        </div>
+        {activeMoodlets(s).length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {activeMoodlets(s).map((x) => (
+              <span key={x.id} className={`flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-semibold ${x.mood >= 0 ? "bg-kgreen/12 text-kgreen" : "bg-kred/12 text-kred"}`}>
+                <Icon emoji={x.emoji} size={13} />
+                {x.label}
+                <span className="font-mono opacity-70">
+                  {x.mood > 0 ? "+" : ""}
+                  {x.mood} · {left(x.until, s.time)}
+                </span>
+              </span>
+            ))}
+          </div>
+        )}
+        {(goal || wishes.length > 0) && (
+          <div className="mt-3 space-y-1.5 border-t border-line pt-3">
+            {goal && (
+              <div className="flex items-center gap-2 text-xs">
+                <Icon name="target" size={15} className="text-kgreen" />
+                <span className="flex-1 font-medium">{goal.label}</span>
+              </div>
+            )}
+            {wishes.map((w) => (
+              <div key={w.id} className={`flex items-center gap-2 text-xs ${s.wishes.done.includes(w.id) ? "text-muted line-through" : ""}`}>
+                <Icon name="sparkles" size={15} className="text-amber-500" />
+                <span className="flex-1">{w.label}</span>
+                <span className="font-mono text-muted">+{w.vibes}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="mt-3 grid grid-cols-4 gap-1 border-t border-line pt-3">
+          {skills.map(([k, v]) => (
+            <div key={k} className="flex flex-col items-center rounded-xl bg-background py-1.5">
+              <Icon name={SKILL_ICON[k] ?? "sparkles"} size={16} />
+              <span className="text-[10px] capitalize text-muted">{k}</span>
+              <span className="font-mono text-xs font-bold">{Math.round(v)}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
   );
 }
 
