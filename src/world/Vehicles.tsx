@@ -211,15 +211,16 @@ export function VehicleModel({ name, color, livery, interior = false }: { name: 
     if (color && !spec.body)
       scene.traverse((o) => {
         const m = o as Mesh;
-        if (!m.isMesh || Array.isArray(m.material)) return;
-        const mat = m.material as MeshStandardMaterial;
-        const hsl = { h: 0, s: 0, l: 0 };
-        mat.color.getHSL(hsl);
-        if (hsl.s > 0.25 && hsl.l > 0.2) {
+        if (!m.isMesh) return;
+        const tint = (mat: MeshStandardMaterial) => {
+          const hsl = { h: 0, s: 0, l: 0 };
+          mat.color.getHSL(hsl);
+          if (hsl.s <= 0.25 || hsl.l <= 0.2) return mat;
           const c = mat.clone();
           c.color = new Color(color);
-          m.material = c;
-        }
+          return c;
+        };
+        m.material = Array.isArray(m.material) ? (m.material as MeshStandardMaterial[]).map(tint) : tint(m.material as MeshStandardMaterial);
       });
     const wrap = new Group();
     const inner = new Group();

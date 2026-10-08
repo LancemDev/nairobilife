@@ -89,7 +89,8 @@ function insideEye(kind: RideKind, big: boolean): { at: [number, number, number]
     return { at: [s[0] + (big ? 0.25 : 0), s[2] + (big ? 0.95 : 0.8), s[1] + 0.05], look: [s[0] * 0.3, s[2] + 0.45, -30] };
   }
   if (kind === "boda") return { at: [0, 2.05, 0.75], look: [0, 1.3, -20] };
-  if (kind === "plane") return { at: [-1.25, 3.3, 1], look: [-30, 1.2, 6] };
+  // Just outside your window, looking over the wing; the overlay draws the window frame.
+  if (kind === "plane") return { at: [-2.4, 5.7, 3.5], look: [-30, 1.5, 9] };
   if (kind === "car") return { at: [0.38, 1.22, 0.1], look: [0.38, 1.0, -30] };
   return { at: [-0.4, 1.18, 0.65], look: [-0.2, 1.0, -30] };
 }
@@ -115,12 +116,12 @@ function Rig({ kind, cam, big }: { kind: RideKind; cam: RideCam; big: boolean })
       cam === "side"
         ? [plane ? 48 : kind === "walk" ? -6 : big ? -7.5 : -5.2, plane ? 6 : big ? 2.6 : 1.8, plane ? 2 : big ? 1.5 : 0]
         : plane
-          ? [0, 10, 42]
+          ? [0, 9, 34]
           : [0, kind === "walk" ? 2.4 : big ? 5 : 3.6, kind === "walk" ? 5 : big ? 13 : 8.5];
     camera.position.x += (lane + want[0] + (cam === "chase" ? Math.sin(t * 0.4) * 0.3 : 0) - camera.position.x) * k;
     camera.position.y += (want[1] - camera.position.y) * k;
     camera.position.z += (want[2] - camera.position.z) * k;
-    camera.lookAt(lane, plane ? 3 : 1, cam === "side" ? 0 : -20);
+    camera.lookAt(lane, plane ? 5 : 1, cam === "side" ? 0 : -20);
   });
   return null;
 }
@@ -141,7 +142,8 @@ function Street({ walk }: { walk: boolean }) {
   const traffic = useMemo(() => {
     const r = rng(11);
     return Array.from({ length: 26 }, (_, i) => {
-      const lane = [-7.5, -4.5, 4.5, 7.5][i % 4];
+      // Your own lane (4.5) stays clear so nothing drives through you or the camera.
+      const lane = [-7.5, -4.5, 7.5][i % 3];
       const roll = r();
       const model: VehicleName = roll < 0.16 ? "matatu" : roll < 0.28 ? "nganya" : roll < 0.36 ? "boda" : TRAFFIC_CARS[Math.floor(r() * TRAFFIC_CARS.length)];
       return { lane, z: -r() * SEG, speed: lane < 0 ? -(8 + r() * 6) : 6 + r() * 8, color: CARS[Math.floor(r() * CARS.length)], model, livery: model === "nganya" ? LIVERIES[i % LIVERIES.length] : null, rider: randomLook(r) };

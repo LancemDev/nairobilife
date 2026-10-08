@@ -81,6 +81,15 @@ export default function RideOverlay() {
   return (
     <div className="absolute inset-0 z-40 bg-[#cfe3f0]">
       <RideScene kind={ride.kind} cam={cam} look={look} livery={livery} onReady={() => setReady(true)} />
+      {ride.kind === "plane" && cam === "inside" && (
+        // An aircraft window: thick plastic bezel around a rounded pane, shade half drawn.
+        <div className="pointer-events-none absolute inset-0 grid place-items-center">
+          <div className="absolute inset-0 bg-[#e9e6e0]" style={{ maskImage: "radial-gradient(ellipse 22% 34% at 50% 50%, transparent 98%, black 100%)", WebkitMaskImage: "radial-gradient(ellipse 22% 34% at 50% 50%, transparent 98%, black 100%)" }} />
+          <div className="relative h-[68vh] w-[44vw] max-w-[520px] rounded-[45%] shadow-[inset_0_0_0_14px_#d6d2ca,inset_0_0_40px_rgba(0,0,0,0.35)]">
+            <div className="absolute inset-x-0 top-0 h-[22%] rounded-t-[45%] bg-gradient-to-b from-[#cfcac0] to-[#bdb7ab] shadow-md" />
+          </div>
+        </div>
+      )}
       <div className="absolute left-3 top-16 w-[min(340px,calc(100vw-24px))] rounded-3xl bg-foreground/85 p-4 text-white shadow-2xl backdrop-blur sm:top-3">
         <div className="flex items-center gap-2 text-sm font-semibold">
           <Icon name={KIND_ICON[ride.kind]} size={18} />
