@@ -76,8 +76,8 @@ const STALLS = ["#c8102e", "#0b7a3b", "#f2b705", "#2563eb", "#ec4899", "#f97316"
 
 /** What each area looks like from above. */
 const DISTRICT: Record<string, { kind: "houses" | "towers" | "midrise" | "stalls" | "forest" | "park" | "hills" | "airport" | "villas" | "sparse"; n: number; r: number; patch: string }> = {
-  cbd: { kind: "towers", n: 70, r: 12, patch: "#c9ccd1" },
-  westlands: { kind: "towers", n: 55, r: 11, patch: "#c9ccd1" },
+  cbd: { kind: "towers", n: 70, r: 15, patch: "#c9ccd1" },
+  westlands: { kind: "towers", n: 55, r: 13, patch: "#c9ccd1" },
   upperhill: { kind: "towers", n: 40, r: 9, patch: "#cfd3d8" },
   kilimani: { kind: "midrise", n: 70, r: 11, patch: "#cfdcc0" },
   eastleigh: { kind: "midrise", n: 90, r: 10, patch: "#d8cfbd" },
@@ -139,6 +139,48 @@ function landmarkKind(id: string, emoji: string): LandmarkKind {
   return "tower";
 }
 
+/** Minimum distance between two places on the map, and the open ground around each. */
+const LANDMARK_GAP = 9;
+const PLAZA = 5;
+
+/** Pushes landmarks apart (and off road centrelines) until each has room of its own. */
+function spreadLandmarks(ls: Landmark[], roads: Road[]) {
+  for (let it = 0; it < 200; it++) {
+    let moved = false;
+    for (const l of ls)
+      for (const r of roads) {
+        const need = r.w / 2 + 3.2;
+        const dist = distToSegment(l.x, l.z, r);
+        if (dist >= need) continue;
+        // Step sideways off the road, perpendicular to it.
+        const nx = -(r.b[1] - r.a[1]);
+        const nz = r.b[0] - r.a[0];
+        const len = Math.hypot(nx, nz) || 1;
+        const side = Math.sign((l.x - r.a[0]) * nx + (l.z - r.a[1]) * nz) || 1;
+        l.x += (nx / len) * side * (need - dist);
+        l.z += (nz / len) * side * (need - dist);
+        moved = true;
+      }
+    for (let i = 0; i < ls.length; i++)
+      for (let j = i + 1; j < ls.length; j++) {
+        const a = ls[i];
+        const b = ls[j];
+        let dx = b.x - a.x;
+        let dz = b.z - a.z;
+        let dist = Math.hypot(dx, dz);
+        if (dist >= LANDMARK_GAP) continue;
+        if (dist < 1e-3) [dx, dz, dist] = [1, 0, 1];
+        const push = (LANDMARK_GAP - dist) / 2;
+        a.x -= (dx / dist) * push;
+        a.z -= (dz / dist) * push;
+        b.x += (dx / dist) * push;
+        b.z += (dz / dist) * push;
+        moved = true;
+      }
+    if (!moved) break;
+  }
+}
+
 /** Builds the whole city deterministically, so every player sees the same Nairobi. */
 export function buildCity(city: CityId, homeEstate: string): City {
   if (city !== "nairobi") return buildTown(city);
@@ -154,21 +196,6 @@ export function buildCity(city: CityId, homeEstate: string): City {
   const turbines: [number, number][] = [];
   const landmarks: Landmark[] = [];
 
-  // Venue landmarks sit on plazas around each area's centre.
-  for (const a of areas) {
-    const venues = VENUES.filter((v) => v.area === a.id);
-    const [cx, cz] = toWorld(a.x, a.y);
-    venues.forEach((v, i) => {
-      const ang = (i / Math.max(1, venues.length)) * Math.PI * 2 + 0.6;
-      const rad = venues.length === 1 ? 0 : 4.5 + venues.length * 0.35;
-      landmarks.push({ id: v.id, name: v.name, emoji: v.emoji, area: a.id, kind: landmarkKind(v.id, v.emoji), x: cx + Math.cos(ang) * rad, z: cz + Math.sin(ang) * rad });
-    });
-  }
-  const home = ESTATES.find((e) => e.id === homeEstate);
-  if (home) {
-    const [hx, hz] = toWorld(home.x, home.y);
-    landmarks.push({ id: "home", name: `Home · ${home.name}`, emoji: "🏠", area: home.area, kind: "home", x: hx, z: hz });
-  }
 
   // Local streets: a cross through each district.
   for (const a of areas) {
@@ -179,7 +206,30 @@ export function buildCity(city: CityId, homeEstate: string): City {
     roads.push({ a: [cx - d.r * 0.4, cz - d.r], b: [cx - d.r * 0.4, cz + d.r], w: 1.2 });
   }
 
-  const clear = (x: number, z: number, pad: number) => roads.every((r) => distToSegment(x, z, r) > r.w / 2 + pad) && landmarks.every((l) => Math.hypot(l.x - x, l.z - z) > 3.2);
+  // Venue landmarks: each on its own plot in a ring around its area's centre, then nudged
+  // apart and off the roads so no two places share a block.
+  for (const a of areas) {
+    const venues = VENUES.filter((v) => v.area === a.id);
+    const [cx, cz] = toWorld(a.x, a.y);
+    const r = DISTRICT[a.id]?.r ?? 10;
+    const ring = venues.length === 1 ? 0 : Math.max(r * 0.55, (venues.length * LANDMARK_GAP) / (Math.PI * 2));
+    venues.forEach((v, i) => {
+      const ang = (i / Math.max(1, venues.length)) * Math.PI * 2 + 0.6;
+      // Alternate plots step in and out a little, like a real street front.
+      const rad = ring + (venues.length > 4 && i % 2 ? 2 : 0);
+      landmarks.push({ id: v.id, name: v.name, emoji: v.emoji, area: a.id, kind: landmarkKind(v.id, v.emoji), x: cx + Math.cos(ang) * rad, z: cz + Math.sin(ang) * rad });
+    });
+  }
+  const home = ESTATES.find((e) => e.id === homeEstate);
+  if (home) {
+    const [hx, hz] = toWorld(home.x, home.y);
+    landmarks.push({ id: "home", name: `Home · ${home.name}`, emoji: "🏠", area: home.area, kind: "home", x: hx, z: hz });
+  }
+  spreadLandmarks(landmarks, roads);
+
+  // Every landmark gets an open plaza, and nothing tall crowds it.
+  const clear = (x: number, z: number, pad: number) => roads.every((r) => distToSegment(x, z, r) > r.w / 2 + pad) && landmarks.every((l) => Math.hypot(l.x - x, l.z - z) > PLAZA + pad);
+  const nearest = (x: number, z: number) => landmarks.reduce((m, l) => Math.min(m, Math.hypot(l.x - x, l.z - z)), Infinity);
 
   for (const a of areas) {
     const d = DISTRICT[a.id];
@@ -208,7 +258,9 @@ export function buildCity(city: CityId, homeEstate: string): City {
           if (!clear(x, z, 1.5)) break;
           const w = 2.4 + rng() * 2.6;
           const central = 1 - Math.hypot(x - cx, z - cz) / d.r;
-          buildings.push({ x, z, w, d: w * (0.7 + rng() * 0.6), h: 4 + rng() * 6 + central * 16, rot: Math.round(rng() * 4) * (Math.PI / 2), color: TOWERS[Math.floor(rng() * TOWERS.length)] });
+          // Skyscrapers step down towards the places you can visit so those stay visible.
+          const near = Math.min(1, Math.max(0, (nearest(x, z) - PLAZA) / 4));
+          buildings.push({ x, z, w, d: w * (0.7 + rng() * 0.6), h: (4 + rng() * 6 + central * 16) * (0.4 + 0.6 * near), rot: Math.round(rng() * 4) * (Math.PI / 2), color: TOWERS[Math.floor(rng() * TOWERS.length)] });
           break;
         }
         case "midrise": {

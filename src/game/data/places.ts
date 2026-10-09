@@ -211,6 +211,17 @@ export const VENUES: Venue[] = [
       { id: "watchCase", label: "Sit in on a court case", emoji: "👨🏾‍⚖️", minutes: 90, open: [9, 16], needs: { fun: 6 }, skills: { charm: 1 }, tags: ["study"], text: "Objection! Sustained. You're hooked." },
     ],
   },
+  {
+    id: "mwendas", area: "cbd", name: "Mwendas", emoji: "🍹", blurb: "Utalii House pub: cheap, strong cocktails and old-school jams. Jam-packed on Fridays.",
+    actions: [
+      toilet(0),
+      { id: "mwendasCocktail", label: "Cocktail at the bar", emoji: "🍹", minutes: 60, cost: 400, open: [12, 2], needs: { fun: 15, social: 10 }, rolls: [{ chance: 0.25, text: "Mwendas cocktails hit different. Kesho itakuwa ndefu.", moodlet: "hangover" }], text: "Cheap, colourful and stronger than it looks. Kunywa pole pole." },
+      { id: "mwendasJug", label: "Share a cocktail jug with the mbogi", emoji: "🫗", minutes: 120, cost: 1500, open: [16, 2], needs: { fun: 25, social: 30 }, skills: { charm: 1 }, moodlet: "partied", rolls: [{ chance: 0.35, text: "One jug became three. Babalas inakam.", moodlet: "hangover" }], text: "One jug, five straws, everyone's gist at once." },
+      { id: "mwendasJams", label: "Sing along to old-school jams", emoji: "🎶", minutes: 90, cost: 300, open: [17, 2], needs: { fun: 22, social: 12 }, skills: { music: 1 }, text: "Sean Paul, Nameless, E-Sir, Wahu. The whole pub knows every word." },
+      { id: "mwendasAfterWork", label: "Friday after-work hangout", emoji: "👔", minutes: 120, cost: 800, open: [16, 23], needs: { fun: 18, social: 25, energy: -5 }, skills: { charm: 1 }, tags: ["gist"], text: "Lanyards off, ties loose. Office gossip and plans for Saturday." },
+      { id: "mwendasBites", label: "Chips, smokies & wings", emoji: "🍟", minutes: 30, cost: 350, needs: { hunger: 35 }, tags: ["eat"], text: "Bar food, the best kind of food at 10pm." },
+    ],
+  },
 
   // Westlands
   {

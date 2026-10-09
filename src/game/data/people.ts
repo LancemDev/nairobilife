@@ -22,6 +22,8 @@ export const NPCS: Npc[] = [
   { id: "mosh", name: "Mosh", emoji: "🏍️", age: 27, venue: "kencom", hours: [5, 23], bio: "Boda rider at Kencom. Knows every shortcut and where the hessy stand.", line: "\"Boss, boda? Nakufikisha chap chap. Shika hapa vizuri.\"" },
   { id: "dennoh", name: "Dennoh", emoji: "🎧", age: 23, venue: "rongaiStage", hours: [5, 23], bio: "Makanga on Baba Yaga. Hangs off the door like it's nothing.", line: "\"Ongata! Ongata! Baba Yaga iko na nafasi, panda tukam!\"" },
   { id: "kaka", name: "Kaka", emoji: "🏍️", age: 31, venue: "nganyaStage", hours: [6, 22], bio: "Umoja boda rider, chairman of the stage. Rwabe to anywhere in the mayibe.", line: "\"Uko na form ya Inner Core? Rwabe tu, tunaenda.\"" },
+  { id: "kinyua", name: "Kinyua", emoji: "🍸", age: 34, venue: "mwendas", hours: [12, 2], bio: "Mwendas barman for ten years. Mixes strong, remembers your order.", line: "\"Kama ni cocktail ya Mwendas, kunywa pole pole. Utaskia.\"" },
+  { id: "sheila", name: "Sheila", emoji: "💃🏾", age: 28, venue: "mwendas", hours: [17, 1], bio: "Upper Hill office girl, Friday regular. Knows every word of every throwback.", line: "\"Hii ngoma ni yangu! DJ, weka volume!\"" },
   { id: "kiprop", name: "Kiprop", emoji: "🏃🏾", age: 25, venue: "karura", hours: [6, 11], bio: "Eldoret-born runner training for the Nairobi Marathon.", line: "\"Twende! Ten more kilometres!\"" },
 ];
 

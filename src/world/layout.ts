@@ -59,6 +59,8 @@ const PALETTES: Record<string, { floor: string; floor2: string; wall: string; ac
   jkia: { floor: "#eef0f2", floor2: "#e2e5e8", wall: "#f5f5f4", accent: "#1d4ed8" },
   ngong: { floor: "#88b06a", floor2: "#7da35f", wall: "#3a5a40", accent: "#dda15e", outdoor: true },
   mombasa: { floor: "#f4e4bc", floor2: "#ecd8a8", wall: "#0077b6", accent: "#f2b705" },
+  // Venues with their own look.
+  mwendas: { floor: "#5b3a24", floor2: "#4e3120", wall: "#7a1f2b", accent: "#f59e0b" },
   kisumu: { floor: "#e3d5b8", floor2: "#d8c8a6", wall: "#2a6f97", accent: "#f2b705" },
 };
 
@@ -79,7 +81,7 @@ const KIND_LABEL: Partial<Record<PropKind, string>> = {
 type Deco = { kind: PropKind; x: number; z: number; rot?: number };
 const AIRPORTS = new Set(["jkia", "moiAirport", "kisumuAirport"]);
 const STATIONS = new Set(["sgrNairobi", "sgrMombasa"]);
-const CLUBS = new Set(["k1", "alchemist", "outering", "namanga", "nyaliHotel", "kisumuTown", "comedyClub"]);
+const CLUBS = new Set(["mwendas", "k1", "alchemist", "outering", "namanga", "nyaliHotel", "kisumuTown", "comedyClub"]);
 const MARKETS = new Set(["gikomba", "kenyattaMarket", "firstAve", "eatStreet", "villageMarket"]);
 const STAGES = new Set(["kencom", "rongaiStage", "nganyaStage"]);
 
@@ -148,10 +150,21 @@ const AIRPORT_PROP: Record<string, [PropKind, string]> = {
   board: ["seats", "Gate"],
 };
 
+/** Mwendas: a pub laid out like one. */
+const MWENDAS_PROP: Record<string, [PropKind, string]> = {
+  mwendasCocktail: ["counter", "Bar"],
+  mwendasJug: ["table", "Tables"],
+  mwendasBites: ["table", "Tables"],
+  mwendasJams: ["dj", "Old-school jams"],
+  mwendasAfterWork: ["lounge", "Corner booth"],
+};
+const SPOT_PROP = (venue: string) => (AIRPORTS.has(venue) ? AIRPORT_PROP : venue === "mwendas" ? MWENDAS_PROP : undefined);
+
 /** Which prop a venue action lives on. */
 function venueKind(a: ActionView, tags: string[], venue: string): PropKind {
   const id = a.id;
-  if (AIRPORTS.has(venue) && AIRPORT_PROP[id]) return AIRPORT_PROP[id][0];
+  const spot = SPOT_PROP(venue)?.[id];
+  if (spot) return spot[0];
   if (id === "toilet") return "washroom";
   if (id.startsWith("work:") || id.startsWith("apply:")) return CAREER_PROP[id.split(":")[1]] ?? "desk";
   if (id.startsWith("enrol:") || id === "lecture" || id === "comrades") return "board";
@@ -231,7 +244,7 @@ function spotsFor(w: number, d: number, taken: { x: number; z: number }[]) {
 export function buildRoom(s: GameState): Room {
   const actions = availableActions(s);
   const place = placeOf(s);
-  const pal = PALETTES[place.area] ?? PALETTES.cbd;
+  const pal = PALETTES[s.location] ?? PALETTES[place.area] ?? PALETTES.cbd;
 
   if (s.location === "home") {
     const [w, d] = HOME_SIZE[unitOf(s).id] ?? [9, 8];
@@ -262,7 +275,7 @@ export function buildRoom(s: GameState): Room {
     const kind = venueKind(a, tagsOf(s.location, a.id), s.location);
     const travel = kind === "train" || (kind === "matatu" && /busBack|lorry/.test(a.id));
     const key = a.id.startsWith("work:") || a.id.startsWith("apply:") ? `${kind}-${a.id.split(":")[1]}` : travel ? `${kind}-${a.id}` : kind;
-    const airport = AIRPORTS.has(s.location) ? AIRPORT_PROP[a.id]?.[1] : undefined;
+    const airport = SPOT_PROP(s.location)?.[a.id]?.[1];
     const gate = kind === "seats" && s.flight?.from === s.location ? `Gate ${s.flight.gate}` : undefined;
     const g = groups.get(key) ?? { id: key, kind, label: gate ?? airport ?? (travel ? a.label.replace(/ \(.*\)$/, "") : (KIND_LABEL[kind] ?? kind)), actions: [] };
     if (a.id.startsWith("work:") || a.id.startsWith("apply:")) g.label = CAREERS.find((c) => c.id === a.id.split(":")[1])?.name ?? g.label;
